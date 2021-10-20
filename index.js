@@ -23,6 +23,7 @@ api.post('/webhook/getCustomerData', (req, res) => {
 })
 
 const handleMessageCreated = async (res, message) => {
+  console.log('messageData:', message)
   const {conversation_id, metadata, name} = message;
   console.log('id and payload', conversation_id, metadata, name)
   try {

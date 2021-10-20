@@ -23,12 +23,12 @@ api.post('/webhook/getCustomerData', (req, res) => {
 })
 
 const handleMessageCreated = async (res, message) => {
-  const {body, conversation_id, metadata, name} = message;
+  const {conversation_id, metadata, name} = message;
   console.log('id and payload', conversation_id, metadata, name)
   try {
     await Papercups.sendMessage({
       conversation_id,
-      body: `Hi ${payload.customer.name}! We'll get back to you soon. I understand you had a ${payload.metadata.surgery} of type ${payload.metadata.surgeryType}. Is this correct?`
+      body: `Hi ${name}! We'll get back to you soon. I understand you had a ${metadata.surgery} of type ${metadata.surgeryType}. Is this correct?`
     })
   } catch (error) {
     console.error(error)
@@ -48,7 +48,6 @@ app.post('/', (req, res) => {
       return res.send(payload);
     case 'message:created':
       return  handleMessageCreated(res, payload)
-
     case 'conversation:created':
     case 'customer:created':
       // TODO: handle events here!

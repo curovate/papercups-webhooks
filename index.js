@@ -10,6 +10,9 @@ app.listen(port, () => {
 });
 const api = express.Router();
 
+app.get('/', (req, res) => {
+  res.send('home')
+})
 
 
 api.post('/webhook/getCustomerData', (req, res) => {

@@ -23,34 +23,16 @@ api.post('/webhook/getCustomerData', (req, res) => {
 })
 
 const handleMessageCreated = async (res, message) => {
-  const {body, conversation_id} = message;
+  const {body, conversation_id, payload} = message;
   try {
     await Papercups.sendMessage({
       conversation_id,
-      body: "this is a test reply from a webhook"
+      body: `Hi ${payload.customer.name}! We'll get back to you soon. I understand you had a ${payload.metadata.surgery} of type ${payload.metadata.surgeryType}. Is this correct?`
     })
   } catch (error) {
     console.error(error)
   }
 }
-
-app.post('/api/webhook', (req, res) => {
-  const {event, payload} = req.body;
-
-  switch (event) {
-    case 'webhook:verify':
-      // Alternatively, this will work as well:
-      // return res.json({challenge: payload})
-      // Respond with the random string in the payload
-      return res.send(payload);
-    case 'message:created':
-      return  handleMessageCreated(res, payload)
-    case 'conversation:created':
-    case 'customer:created':
-      // TODO: handle events here!
-      return res.json({ok: true});
-  }
-})
 
 app.post('/', (req, res) => {
   const {event, payload} = req.body;
@@ -64,10 +46,11 @@ app.post('/', (req, res) => {
 
       return res.send(payload);
     case 'message:created':
-      return  handleMessageCreated(res, payload)
+      
     case 'conversation:created':
+      return  handleMessageCreated(res, payload)
     case 'customer:created':
       // TODO: handle events here!
-      return res.json({ok: true});
+      // return res.json({ok: true});
   }
 })

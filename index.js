@@ -26,7 +26,7 @@ const handleMessageCreated = async (res, message) => {
   console.log('messageData:', message)
   const {conversation_id, customer, body} = message;
   const surgeryDetails = customer.email.split(',')
-  if (body === 'physio') {
+  if (body.toLowerCase() === 'physio') {
     try {
       await Papercups.sendMessage({
         conversation_id,
@@ -36,7 +36,7 @@ const handleMessageCreated = async (res, message) => {
     } catch (error) {
       console.error(error)
     }
-  } else if (body === 'app') {
+  } else if (body.toLowerCase() === 'app') {
     try {
       await Papercups.sendMessage({
         conversation_id,

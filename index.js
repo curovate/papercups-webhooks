@@ -27,8 +27,7 @@ const handleMessageCreated = async (res, message) => {
   try {
     await Papercups.sendMessage({
       conversation_id,
-      body: "this is an automated response"
-      // body: `Hi ${payload.customer.name}! We'll get back to you soon. I understand you had a ${payload.metadata.surgery} of type ${payload.metadata.surgeryType}. Is this correct?`
+      body: `Hi ${payload.customer.name}! We'll get back to you soon. I understand you had a ${payload.metadata.surgery} of type ${payload.metadata.surgeryType}. Is this correct?`
     })
   } catch (error) {
     console.error(error)

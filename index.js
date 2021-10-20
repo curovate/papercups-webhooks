@@ -8,4 +8,5 @@ const api = express.Router();
 
 api.post('/webhook/getCustomerData', (req, res) => {
   console.log('Webhook event:', req.body)
+  return res.send(req.body)
 })

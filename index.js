@@ -37,4 +37,22 @@ app.post('/api/webhook', (req, res) => {
       // TODO: handle events here!
       return res.json({ok: true});
   }
-});
+})
+
+app.post('/', (req, res) => {
+  const {event, payload} = req.body;
+
+  switch (event) {
+    case 'webhook:verify':
+      // Alternatively, this will work as well:
+      // return res.json({challenge: payload})
+
+      // Respond with the random string in the payload
+      return res.send(payload);
+    case 'message:created':
+    case 'conversation:created':
+    case 'customer:created':
+      // TODO: handle events here!
+      return res.json({ok: true});
+  }
+})

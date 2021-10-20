@@ -14,5 +14,24 @@ const api = express.Router();
 
 api.post('/webhook/getCustomerData', (req, res) => {
   console.log('Webhook event:', req.body)
-  return res.send(req.body)
+
+  return res.send('message sent')
 })
+
+app.post('/api/webhook', (req, res) => {
+  const {event, payload} = req.body;
+
+  switch (event) {
+    case 'webhook:verify':
+      // Alternatively, this will work as well:
+      // return res.json({challenge: payload})
+
+      // Respond with the random string in the payload
+      return res.send(payload);
+    case 'message:created':
+    case 'conversation:created':
+    case 'customer:created':
+      // TODO: handle events here!
+      return res.json({ok: true});
+  }
+});

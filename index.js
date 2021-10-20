@@ -24,6 +24,7 @@ api.post('/webhook/getCustomerData', (req, res) => {
 
 const handleMessageCreated = async (res, message) => {
   const {body, conversation_id, payload} = message;
+  console.log('id and payload', conversation_id, payload)
   try {
     await Papercups.sendMessage({
       conversation_id,

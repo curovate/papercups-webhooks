@@ -53,6 +53,7 @@ app.post('/', (req, res) => {
       //   return  handleMessageCreated(res, payload)
       // }
     case 'conversation:created':
+      console.log('conversation data:', payload)
       return  handleMessageCreated(res, payload)
     case 'customer:created':
       // TODO: handle events here!

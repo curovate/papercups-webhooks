@@ -24,16 +24,27 @@ api.post('/webhook/getCustomerData', (req, res) => {
 
 const handleMessageCreated = async (res, message) => {
   console.log('messageData:', message)
-  const {conversation_id, customer} = message;
+  const {conversation_id, customer, body} = message;
   const surgeryDetails = customer.email.split(',')
-  try {
-    await Papercups.sendMessage({
-      conversation_id,
-      body: `Hi ${customer.name}. We'll get back to you soon! Just to verify, you had a ${surgeryDetails[0]}-${surgeryDetails[1]}. Is this correct?`
-      // body: `Hi ${name}! We'll get back to you soon. I understand you had a ${metadata.surgery} of type ${metadata.surgeryType}. Is this correct?`
-    })
-  } catch (error) {
-    console.error(error)
+  if (body === 'physio') {
+    try {
+      await Papercups.sendMessage({
+        conversation_id,
+        body: `Hi ${customer.name}. We'll get back to you soon! Just to verify, you had a ${surgeryDetails[0]}-${surgeryDetails[1]}. Is this correct?`
+        // body: `Hi ${name}! We'll get back to you soon. I understand you had a ${metadata.surgery} of type ${metadata.surgeryType}. Is this correct?`
+      })
+    } catch (error) {
+      console.error(error)
+    }
+  } else if (body === 'app') {
+    try {
+      await Papercups.sendMessage({
+        conversation_id,
+        body: `Hi ${customer.name}. We'll get back to you soon! In the meantime, can you describe what you need help with?`
+      })
+    } catch (error) {
+      console.error(error)
+    }
   }
 }
 
@@ -49,9 +60,9 @@ app.post('/', (req, res) => {
 
       return res.send(payload);
     case 'message:created':
-      // if (payload.type === 'reply') {
-      //   return  handleMessageCreated(res, payload)
-      // }
+      if (payload.type === 'reply') {
+        return  handleMessageCreated(res, payload)
+      }
     case 'conversation:created':
       console.log('conversation data:', payload)
       return  handleMessageCreated(res, payload)

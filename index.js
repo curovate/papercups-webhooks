@@ -64,6 +64,7 @@ app.post('/', (req, res) => {
 
       return res.send(payload);
     case 'message:created':
+      return  handleMessageCreated(res, payload)
     case 'conversation:created':
     case 'customer:created':
       // TODO: handle events here!

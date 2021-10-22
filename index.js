@@ -25,6 +25,11 @@ const options = {
   }
 };
 
+app.get('/', (req, res) => {
+  res.send('home')
+})
+
+
 app.post('/token', (req, res) => {
   axios.request(options).then(function (response) {
     console.log(response.data);
@@ -34,9 +39,6 @@ app.post('/token', (req, res) => {
   });
 })
 
-// app.get('/', (req, res) => {
-//   res.send('home')
-// })
 
 
 // api.post('/webhook/getCustomerData', (req, res) => {

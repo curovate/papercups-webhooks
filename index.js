@@ -13,17 +13,17 @@ app.listen(port, () => {
 });
 const api = express.Router();
 
-const options = {
-  method: 'POST',
-  url: 'https://dev-e8dt7y4d.auth0.com/oauth/token',
-  headers: {'content-type': 'application/x-www-form-urlencoded'},
-  data: {
-    grant_type: 'client_credentials',
-    client_id: 'yANAa51nVd7oKwdD3keAIeqKAjbUMqPx',
-    client_secret: AUTH0_CLIENT_SECRET,
-    audience: 'https://dev-e8dt7y4d.auth0.com/api/v2/'
-  }
-};
+// const options = {
+//   method: 'POST',
+//   url: 'https://dev-e8dt7y4d.auth0.com/oauth/token',
+//   headers: {'content-type': 'application/x-www-form-urlencoded'},
+//   data: {
+//     grant_type: 'client_credentials',
+//     client_id: 'yANAa51nVd7oKwdD3keAIeqKAjbUMqPx',
+//     client_secret: AUTH0_CLIENT_SECRET,
+//     audience: 'https://dev-e8dt7y4d.auth0.com/api/v2/'
+//   }
+// };
 
 app.get('/', (req, res) => {
   res.send('home')

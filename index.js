@@ -30,14 +30,13 @@ app.get('/', (req, res) => {
 })
 
 
-app.post('/token', (req, res) => {
-  axios.request(options).then(function (response) {
-    console.log(response.data);
-    res.json()
-  }).catch(function (error) {
-    console.error(error);
-  });
-})
+// app.post('/token', (req, res) => {
+//   axios.request(options).then(function (response) {
+//     console.log(response.data);
+//   }).catch(function (error) {
+//     console.error(error);
+//   });
+// })
 
 
 

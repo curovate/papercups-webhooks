@@ -13,30 +13,30 @@ app.listen(port, () => {
 });
 const api = express.Router();
 
-// const options = {
-//   method: 'POST',
-//   url: 'https://dev-e8dt7y4d.auth0.com/oauth/token',
-//   headers: {'content-type': 'application/x-www-form-urlencoded'},
-//   data: {
-//     grant_type: 'client_credentials',
-//     client_id: 'yANAa51nVd7oKwdD3keAIeqKAjbUMqPx',
-//     client_secret: AUTH0_CLIENT_SECRET,
-//     audience: 'https://dev-e8dt7y4d.auth0.com/api/v2/'
-//   }
-// };
-
 app.get('/', (req, res) => {
   res.send('home')
 })
 
 
-// app.post('/token', (req, res) => {
-//   axios.request(options).then(function (response) {
-//     console.log(response.data);
-//   }).catch(function (error) {
-//     console.error(error);
-//   });
-// })
+app.post('/token/:id', (req, res) => {
+  const secret = req.params.id
+  axios.request({
+    method: 'POST',
+    url: 'https://dev-e8dt7y4d.auth0.com/oauth/token',
+    headers: {'content-type': 'application/x-www-form-urlencoded'},
+    data: {
+      grant_type: 'client_credentials',
+      client_id: 'yANAa51nVd7oKwdD3keAIeqKAjbUMqPx',
+      client_secret: secret,
+      audience: 'https://dev-e8dt7y4d.auth0.com/api/v2/'
+    }
+  })
+  .then(function (response) {
+    console.log(response.data);
+  }).catch(function (error) {
+    console.error(error);
+  });
+})
 
 
 

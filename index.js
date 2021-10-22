@@ -20,6 +20,7 @@ app.get('/', (req, res) => {
 
 app.post('/token/:id', (req, res) => {
   const secret = req.params.id
+  console.log(secret)
   axios.request({
     method: 'POST',
     url: 'https://dev-e8dt7y4d.auth0.com/oauth/token',

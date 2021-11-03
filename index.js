@@ -1,8 +1,6 @@
 const express = require('express');
 const app = express()
 const Papercups = require('./papercups')(process.env.PAPERCUPS_API_KEY)
-const axios = require('axios')
-const jwt = require('jsonwebtoken');
 
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
@@ -14,7 +12,7 @@ app.listen(port, () => {
 const api = express.Router();
 
 app.get('/', (req, res) => {
-  res.send('This is the home for the web portal for Curovate')
+  res.send('This is the home for the webhooks for Curovate Chat')
 })
 
 // app.post('/token/:id', (req, res) => {
@@ -72,6 +70,10 @@ api.post('/webhook/getCustomerData', (req, res) => {
 //   }
 // }
 
+const sendNotification = () => {
+  console.log('this is where we should write to the DB')
+}
+
 app.post('/', (req, res) => {
   const {event, payload} = req.body;
 
@@ -84,8 +86,9 @@ app.post('/', (req, res) => {
 
       return res.send(payload);
     case 'message:created':
-      if (payload.type === 'reply') {
-        console.log(res, payload)
+      console.log(payload.customer)
+      if (payload.user.toLowerCase().includes('Physical Therapist')) {
+        sendNotification()
       }
     case 'conversation:created':
 

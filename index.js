@@ -86,8 +86,10 @@ app.post('/', (req, res) => {
 
       return res.send(payload);
     case 'message:created':
-      console.log(payload.customer)
-      if (payload.user.toLowerCase().includes('Physical Therapist')) {
+      console.log('PAYLOAD INFO:', payload)
+      console.log('CUSTOMER INFO:', payload.customer ? payload.customer : null)
+      console.log('USER INFO:', payload.user ? payload.user : null)
+      if (payload.user) {
         sendNotification()
       }
     case 'conversation:created':

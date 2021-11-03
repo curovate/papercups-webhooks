@@ -14,38 +14,37 @@ app.listen(port, () => {
 const api = express.Router();
 
 app.get('/', (req, res) => {
-  res.send('home')
+  res.send('This is the home for the web portal for Curovate')
 })
 
-
-app.post('/token/:id', (req, res) => {
-  const secret = req.params.id
-  console.log(secret)
-  axios.request({
-    method: 'POST',
-    url: 'https://dev-e8dt7y4d.auth0.com/oauth/token',
-    headers: {'content-type': 'application/x-www-form-urlencoded'},
-    data: {
-      grant_type: 'client_credentials',
-      client_id: 'yANAa51nVd7oKwdD3keAIeqKAjbUMqPx',
-      client_secret: secret,
-      audience: 'https://dev-e8dt7y4d.auth0.com/api/v2/'
-    }
-  })
-  .then(function (response) {
-    console.log(response.data);
-  }).catch(function (error) {
-    console.error(error);
-  });
-})
-
-
-
-// api.post('/webhook/getCustomerData', (req, res) => {
-//   console.log('Webhook event:', req.body)
-
-//   return res.send('message sent')
+// app.post('/token/:id', (req, res) => {
+//   const secret = req.params.id
+//   console.log(secret)
+//   axios.request({
+//     method: 'POST',
+//     url: 'https://dev-e8dt7y4d.auth0.com/oauth/token',
+//     headers: {'content-type': 'application/x-www-form-urlencoded'},
+//     data: {
+//       grant_type: 'client_credentials',
+//       client_id: 'yANAa51nVd7oKwdD3keAIeqKAjbUMqPx',
+//       client_secret: secret,
+//       audience: 'https://dev-e8dt7y4d.auth0.com/api/v2/'
+//     }
+//   })
+//   .then(function (response) {
+//     console.log(response.data);
+//   }).catch(function (error) {
+//     console.error(error);
+//   });
 // })
+
+
+
+api.post('/webhook/getCustomerData', (req, res) => {
+  console.log('Webhook event:', req.body)
+
+  return res.send('message sent')
+})
 
 // const handleMessageCreated = async (res, message) => {
 //   console.log('messageData:', message)
@@ -73,26 +72,25 @@ app.post('/token/:id', (req, res) => {
 //   }
 // }
 
-// app.post('/', (req, res) => {
-//   const {event, payload} = req.body;
+app.post('/', (req, res) => {
+  const {event, payload} = req.body;
 
-//   switch (event) {
-//     case 'webhook:verify':
-//       // Alternatively, this will work as well:
-//       // return res.json({challenge: payload})
+  switch (event) {
+    case 'webhook:verify':
+      // Alternatively, this will work as well:
+      // return res.json({challenge: payload})
 
-//       // Respond with the random string in the payload
+      // Respond with the random string in the payload
 
-//       return res.send(payload);
-//     case 'message:created':
-//       if (payload.type === 'reply') {
-//         return  handleMessageCreated(res, payload)
-//       }
-//     case 'conversation:created':
-//       console.log('conversation data:', payload)
-//       return  handleMessageCreated(res, payload)
-//     case 'customer:created':
-//       // TODO: handle events here!
-//       // return res.json({ok: true});
-//   }
-// })
+      return res.send(payload);
+    case 'message:created':
+      if (payload.type === 'reply') {
+        console.log(res, payload)
+      }
+    case 'conversation:created':
+
+    case 'customer:created':
+      // TODO: handle events here!
+      // return res.json({ok: true});
+  }
+})

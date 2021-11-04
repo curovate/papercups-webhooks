@@ -1,6 +1,30 @@
 const express = require('express');
 const app = express()
+require('dotenv').config();
 const Papercups = require('./papercups')(process.env.PAPERCUPS_API_KEY)
+const { Sequelize, QueryTypes } = require('sequelize');
+
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'postgres',
+  protocol: 'postgres',
+  dialectOptions: {
+      ssl: {
+          require: true,
+          rejectUnauthorized: false
+      }
+  }
+});
+
+const makeConnection = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Connection has been established successfully.');
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+  }
+}
+
+makeConnection()
 
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
@@ -15,87 +39,56 @@ app.get('/', (req, res) => {
   res.send('This is the home for the webhooks for Curovate Chat')
 })
 
-// app.post('/token/:id', (req, res) => {
-//   const secret = req.params.id
-//   console.log(secret)
-//   axios.request({
-//     method: 'POST',
-//     url: 'https://dev-e8dt7y4d.auth0.com/oauth/token',
-//     headers: {'content-type': 'application/x-www-form-urlencoded'},
-//     data: {
-//       grant_type: 'client_credentials',
-//       client_id: 'yANAa51nVd7oKwdD3keAIeqKAjbUMqPx',
-//       client_secret: secret,
-//       audience: 'https://dev-e8dt7y4d.auth0.com/api/v2/'
-//     }
-//   })
-//   .then(function (response) {
-//     console.log(response.data);
-//   }).catch(function (error) {
-//     console.error(error);
-//   });
-// })
-
-
-
-api.post('/webhook/getCustomerData', (req, res) => {
-  console.log('Webhook event:', req.body)
-
-  return res.send('message sent')
-})
-
-// const handleMessageCreated = async (res, message) => {
-//   console.log('messageData:', message)
-//   const {conversation_id, customer, body} = message;
-//   const surgeryDetails = customer.email.split(',')
-//   if (body.toLowerCase() === 'physio') {
-//     try {
-//       await Papercups.sendMessage({
-//         conversation_id,
-//         body: `Hi ${customer.name}. We'll get back to you soon! Just to verify, you had a ${surgeryDetails[0]}-${surgeryDetails[1]}. Is this correct?`
-//         // body: `Hi ${name}! We'll get back to you soon. I understand you had a ${metadata.surgery} of type ${metadata.surgeryType}. Is this correct?`
-//       })
-//     } catch (error) {
-//       console.error(error)
-//     }
-//   } else if (body.toLowerCase() === 'app') {
-//     try {
-//       await Papercups.sendMessage({
-//         conversation_id,
-//         body: `Hi ${customer.name}. We'll get back to you soon! In the meantime, can you describe what you need help with?`
-//       })
-//     } catch (error) {
-//       console.error(error)
-//     }
-//   }
-// }
-
-const sendNotification = () => {
-  console.log('this is where we should write to the DB')
+const sendNotificationAddUnreadMsgs = async (conversation_id) => {
+  try {
+    const customer =  await sequelize.query(`SELECT customer_id FROM conversations WHERE id = '${conversation_id}'`, { type: QueryTypes.SELECT });
+    const userEmail = await sequelize.query(`SELECT email FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
+    await sequelize.query(`UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.UPDATE})
+    const numberOfUnreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
+    return {
+      unreadMsgs: numberOfUnreadMsgs[0].unread_msgs,
+      email: userEmail[0].email,
+    }
+  } catch (error) {
+    console.error(error)
+  }
 }
+
+const markMsgsAsRead = async (customerEmail) => {
+  try {
+    await sequelize.query(`UPDATE customers SET unread_msgs = 0 WHERE email = '${customerEmail}'`, { type: QueryTypes.UPDATE})
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 
 app.post('/', (req, res) => {
   const {event, payload} = req.body;
 
   switch (event) {
     case 'webhook:verify':
-      // Alternatively, this will work as well:
-      // return res.json({challenge: payload})
-
-      // Respond with the random string in the payload
 
       return res.send(payload);
     case 'message:created':
-      console.log('PAYLOAD INFO:', payload)
-      console.log('CUSTOMER INFO:', payload.customer ? payload.customer : null)
-      console.log('USER INFO:', payload.user ? payload.user : null)
+      // console.log('PAYLOAD INFO:', payload)
+      // console.log('CUSTOMER INFO:', payload.customer ? payload.customer : null)
+      // console.log('USER INFO:', payload.user ? payload.user : null)
       if (payload.user) {
-        sendNotification()
+        sendNotificationAddUnreadMsgs(payload.conversation_id)
       }
     case 'conversation:created':
 
     case 'customer:created':
-      // TODO: handle events here!
-      // return res.json({ok: true});
   }
+})
+
+app.post('/markmsgsasread', (req, res) => {
+  markMsgsAsRead(req.body.email)
+})
+
+app.get('/getunreadmsgs/:email', async (req, res) => {
+  const email = req.params.email
+  const unreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE email = '${email}'`, { type: QueryTypes.SELECT})
+  res.json({ unreadMsgs })
 })

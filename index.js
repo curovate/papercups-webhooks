@@ -78,9 +78,7 @@ const sendNotificationAddUnreadMsgs = async (conversation_id) => {
     const numberOfUnreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
     console.log('sending message to: ', onlineUsers[userEmail[0].email])
     io.on("connection", (socket) => {
-      socket.on("updateUnreadMsgs", () => {
-        io.to(onlineUsers[userEmail[0].email]).emit('private', `Your new number of unread messages is ${numberOfUnreadMsgs}`)
-      })
+        io.to(onlineUsers[userEmail[0].email]).emit('updateUnreadMsgs', `Your new number of unread messages is ${numberOfUnreadMsgs}`)
     })
     return {
       unreadMsgs: numberOfUnreadMsgs[0].unread_msgs,

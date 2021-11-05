@@ -73,7 +73,7 @@ const sendNotificationAddUnreadMsgs = async (conversation_id) => {
     await sequelize.query(`UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.UPDATE})
     const numberOfUnreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
     console.log('sending message to: ', onlineUsers[userEmail[0].email])
-    io.to(onlineUsers[userEmail[0].email]).emit('updateUnreadMsgs', `Your new number of unread messages is ${numberOfUnreadMsgs}`)
+    io.to(onlineUsers[userEmail[0].email]).emit('updateUnreadMsgs', `${numberOfUnreadMsgs[0].unread_msgs}`)
 
     return {
       unreadMsgs: numberOfUnreadMsgs[0].unread_msgs,

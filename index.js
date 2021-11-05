@@ -35,7 +35,7 @@ io.on('connection', (socket) => {
 
   socket.on("sendEmail", (email) => {
     onlineUsers[email] = socket.id
-    console.log(onlineUsers)
+    console.log('online users:', onlineUsers)
   })
 
   io.to(socket.id).emit('private', `hello user with id of ${socket.id}`)
@@ -72,9 +72,8 @@ const sendNotificationAddUnreadMsgs = async (conversation_id) => {
     const userEmail = await sequelize.query(`SELECT email FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
     await sequelize.query(`UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.UPDATE})
     const numberOfUnreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
-    console.log('sending message to: ', onlineUsers[userEmail[0].email])
+    console.log('sending message to: ', onlineUsers[userEmail[0].email], ` at email ${userEmail[0].email}`)
     io.to(onlineUsers[userEmail[0].email]).emit('updateUnreadMsgs', `${numberOfUnreadMsgs[0].unread_msgs}`)
-
     return {
       unreadMsgs: numberOfUnreadMsgs[0].unread_msgs,
       email: userEmail[0].email,
@@ -87,6 +86,7 @@ const sendNotificationAddUnreadMsgs = async (conversation_id) => {
 const markMsgsAsRead = async (customerEmail) => {
   try {
     await sequelize.query(`UPDATE customers SET unread_msgs = 0 WHERE email = '${customerEmail}'`, { type: QueryTypes.UPDATE})
+    console.log('messages have been cleared')
   } catch (error) {
     console.error(error)
   }

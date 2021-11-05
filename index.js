@@ -1,8 +1,12 @@
 const express = require('express');
-const app = express()
+const app = express();
+const http = require('http');
+const server = http.createServer(app);
 require('dotenv').config();
 const Papercups = require('./papercups')(process.env.PAPERCUPS_API_KEY)
 const { Sequelize, QueryTypes } = require('sequelize');
+const { Server } = require("socket.io");
+const io = new Server(server);
 
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',
@@ -13,6 +17,33 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
           rejectUnauthorized: false
       }
   }
+});
+
+app.use(express.json())
+app.use(express.urlencoded({extended: true}))
+
+const port = process.env.PORT || 3000;
+server.listen(port, () => {
+  console.log(`🚀  Server listening on port ${port}`);
+});
+const api = express.Router();
+
+const onlineUsers = {}
+
+io.on('connection', (socket) => {
+  console.log(`a user connected in socket ${socket.id}`);
+
+  io.to(socket.id).emit('private', `hello user with id of ${socket.id}`)
+
+  socket.on("disconnect", () => {
+    console.log(`user ${socket.id} has disconnected`)
+  })
+
+  socket.on("error", (err) => {
+    console.error(err)
+    socket.disconnect();
+  })
+
 });
 
 const makeConnection = async () => {
@@ -26,15 +57,6 @@ const makeConnection = async () => {
 
 makeConnection()
 
-app.use(express.json())
-app.use(express.urlencoded({extended: true}))
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`🚀  Server listening on port ${port}`);
-});
-const api = express.Router();
-
 app.get('/', (req, res) => {
   res.send('This is the home for the webhooks for Curovate Chat')
 })
@@ -45,6 +67,7 @@ const sendNotificationAddUnreadMsgs = async (conversation_id) => {
     const userEmail = await sequelize.query(`SELECT email FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
     await sequelize.query(`UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.UPDATE})
     const numberOfUnreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
+    io.to(socket.id).emit('private', `Your new number of unread messages should now be ${num}`)
     return {
       unreadMsgs: numberOfUnreadMsgs[0].unread_msgs,
       email: userEmail[0].email,
@@ -85,6 +108,7 @@ app.post('/', (req, res) => {
 
 app.post('/markmsgsasread', (req, res) => {
   markMsgsAsRead(req.body.email)
+  res.json({ unreadMsgs: 0})
 })
 
 app.get('/getunreadmsgs/:email', async (req, res) => {

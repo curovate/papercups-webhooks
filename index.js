@@ -44,8 +44,6 @@ io.on('connection', (socket) => {
     console.log(`user ${socket.id} has disconnected`)
   })
 
-  io.to(socket.id).emit('private', `Your new number of unread messages should now be ${num}`)
-
   socket.on("error", (err) => {
     console.error(err)
     socket.disconnect();

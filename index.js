@@ -28,16 +28,25 @@ server.listen(port, () => {
 });
 const api = express.Router();
 
-const onlineUsers = {}
+let onlineUsers = {}
 
 io.on('connection', (socket) => {
-  console.log(`a user connected in socket ${socket.id}`);
+  console.log('onlineUsers:', onlineUsers)
+
+  socket.on("sendEmail", (email) => {
+    onlineUsers[email] = socket.id
+    console.log(onlineUsers)
+  })
 
   io.to(socket.id).emit('private', `hello user with id of ${socket.id}`)
 
   socket.on("disconnect", () => {
     console.log(`user ${socket.id} has disconnected`)
   })
+
+  const updateUnreadMsgs = () => {
+    io.to(socket.id).emit('private', `Your new number of unread messages should now be ${num}`)
+  }
 
   socket.on("error", (err) => {
     console.error(err)
@@ -67,7 +76,12 @@ const sendNotificationAddUnreadMsgs = async (conversation_id) => {
     const userEmail = await sequelize.query(`SELECT email FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
     await sequelize.query(`UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.UPDATE})
     const numberOfUnreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
-    io.to(socket.id).emit('private', `Your new number of unread messages should now be ${num}`)
+    console.log('sending message to: ', onlineUsers[userEmail[0].email])
+    io.on("connection", (socket) => {
+      socket.on("updateUnreadMsgs", () => {
+        io.to(onlineUsers[userEmail[0].email]).emit('private', `Your new number of unread messages is ${numberOfUnreadMsgs}`)
+      })
+    })
     return {
       unreadMsgs: numberOfUnreadMsgs[0].unread_msgs,
       email: userEmail[0].email,
@@ -98,6 +112,7 @@ app.post('/', (req, res) => {
       // console.log('CUSTOMER INFO:', payload.customer ? payload.customer : null)
       // console.log('USER INFO:', payload.user ? payload.user : null)
       if (payload.user) {
+        console.log('triggered switch message:created')
         sendNotificationAddUnreadMsgs(payload.conversation_id)
       }
     case 'conversation:created':

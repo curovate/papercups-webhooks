@@ -104,18 +104,16 @@ app.post('/', (req, res) => {
       // console.log('PAYLOAD INFO:', payload)
       // console.log('CUSTOMER INFO:', payload.customer ? payload.customer : null)
       // console.log('USER INFO:', payload.user ? payload.user : null)
-      if (payload.user) {
-        console.log('triggered switch message:created')
-        sendNotificationAddUnreadMsgs(payload.conversation_id)
-      }
+    sendNotificationAddUnreadMsgs(payload.conversation_id)
     case 'conversation:created':
 
     case 'customer:created':
   }
 })
 
-app.post('/markmsgsasread', (req, res) => {
-  markMsgsAsRead(req.body.email)
+app.post('/markmsgsasread/:email', (req, res) => {
+  const email = req.params.email
+  markMsgsAsRead(email)
   res.json({ unreadMsgs: 0})
 })
 

@@ -34,7 +34,6 @@ io.on('connection', (socket) => {
   console.log('onlineUsers:', onlineUsers)
 
   socket.on("sendEmail", (email) => {
-    onlineUsers[email] = socket.id
     console.log('online users:', onlineUsers)
   })
 
@@ -104,7 +103,9 @@ app.post('/', (req, res) => {
       // console.log('PAYLOAD INFO:', payload)
       // console.log('CUSTOMER INFO:', payload.customer ? payload.customer : null)
       // console.log('USER INFO:', payload.user ? payload.user : null)
-    sendNotificationAddUnreadMsgs(payload.conversation_id)
+    if (payload.user) {
+      sendNotificationAddUnreadMsgs(payload.conversation_id)
+    }
     case 'conversation:created':
 
     case 'customer:created':

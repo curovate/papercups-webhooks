@@ -33,6 +33,10 @@ let onlineUsers = {}
 io.on('connection', (socket) => {
   console.log('onlineUsers:', onlineUsers)
 
+  socket.on('online',()=>{
+    //do nothing
+  })
+
   socket.on("sendEmail", (email) => {
     onlineUsers[email] = socket.id
     console.log('online users:', onlineUsers)
@@ -72,7 +76,7 @@ const sendNotificationAddUnreadMsgs = async (conversation_id) => {
     const userEmail = await sequelize.query(`SELECT email FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
     await sequelize.query(`UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.UPDATE})
     const numberOfUnreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
-    console.log(`sending unread message number ${numberOfUnreadMsgs} to:`, onlineUsers[userEmail[0].email], ` at email ${userEmail[0].email}`)
+    console.log(`sending unread message number ${numberOfUnreadMsgs[0].unread_msgs} to:`, onlineUsers[userEmail[0].email], ` at email ${userEmail[0].email}`)
     io.to(onlineUsers[userEmail[0].email]).emit('updateUnreadMsgs', `${numberOfUnreadMsgs[0].unread_msgs}`)
     return {
       unreadMsgs: numberOfUnreadMsgs[0].unread_msgs,

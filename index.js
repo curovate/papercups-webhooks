@@ -37,7 +37,7 @@ admin.initializeApp({
   // databaseURL: 
 })
 
-const message = (token) => {
+const message = (token, unreadMsgCount) => {
   return (
     {
   notification: {
@@ -45,7 +45,7 @@ const message = (token) => {
     body: 'The Physical Therapist has responded to your question on Curovate…'
   },
   data: {
-
+    unreadMsgs: unreadMsgCount,
   },
   android: {
     notification: {
@@ -123,8 +123,8 @@ const sendNotificationAddUnreadMsgs = async (conversation_id) => {
     const fbToken = await sequelize.query(`SELECT token FROM firebase_tokens WHERE email ='${userEmail[0].email}'`, { type: QueryTypes.SELECT })
     console.log(`sending unread message number ${numberOfUnreadMsgs[0].unread_msgs} to:`, onlineUsers[userEmail[0].email], ` at email ${userEmail[0].email}`)
     io.to(onlineUsers[userEmail[0].email]).emit('updateUnreadMsgs', `${numberOfUnreadMsgs[0].unread_msgs}`)
-    console.log(fbToken)
-    admin.messaging().send(message(fbToken[0].token))
+    console.log(fbToken[0].token)
+    admin.messaging().send(message(fbToken[0].token, numberOfUnreadMsgs[0].unread_msgs))
     .then(response => {
       console.log('Successfully sent message:', response)
     })
@@ -202,3 +202,4 @@ app.post('/fbtokens', async (req, res) => {
     res.json({ result: 'successfully inserted token to the database' })
   }
 })
+

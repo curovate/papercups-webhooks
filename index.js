@@ -192,8 +192,8 @@ app.post('/fbtokens', async (req, res) => {
   const { email, token }  = req.body
   console.log(req.body)
   const isToken = await sequelize.query(`SELECT EXISTS(SELECT token FROM firebase_tokens WHERE email = '${email}')`, { type: QueryTypes.SELECT })
-  console.log(isToken)
-  if (isToken) {
+  console.log(isToken[0].exists)
+  if (isToken[0].exists) {
     await sequelize.query(`UPDATE firebase_tokens SET token = '${token}' WHERE email = '${email}'`, { type: QueryTypes.UPDATE })
     res.json({ result: 'successfully updated token to the database' })
   } else {

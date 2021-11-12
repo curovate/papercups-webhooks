@@ -197,7 +197,7 @@ app.post('/fbtokens', async (req, res) => {
     await sequelize.query(`UPDATE firebase_tokens SET token = '${token}' WHERE email = '${email}'`, { type: QueryTypes.UPDATE })
     res.json({ result: 'successfully updated token to the database' })
   } else {
-    const insertTokenRow = await sequelize.query(`INSERT INTO firebase_tokens (email, token) VALUES ('${email}', '${token}')`, { type: QueryTypes.INSERT })
+    const insertTokenRow = await sequelize.query(`INSERT INTO firebase_tokens (email, updated_at, token) VALUES ('${email}', current_timestamp '${token}')`, { type: QueryTypes.INSERT })
     console.log(insertTokenRow)
     res.json({ result: 'successfully inserted token to the database' })
   }

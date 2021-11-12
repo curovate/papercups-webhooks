@@ -188,7 +188,7 @@ app.get('/fbtokens/:email', async (req, res) => {
   res.json({ fbToken })
 })
 
-app.post('/fbtokens/:email', async (req, res) => {
+app.post('/fbtokens', async (req, res) => {
   const { email, token }  = req.body
   console.log(req.body)
   const isToken = await sequelize.query(`SELECT EXISTS(SELECT token FROM firebase_tokens WHERE email = '${email}')`, { type: QueryTypes.SELECT })

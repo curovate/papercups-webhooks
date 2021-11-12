@@ -4,9 +4,12 @@ const http = require('http');
 const server = http.createServer(app);
 require('dotenv').config();
 const Papercups = require('./papercups')(process.env.PAPERCUPS_API_KEY)
+const admin = require("firebase-admin")
 const { Sequelize, QueryTypes } = require('sequelize');
 const { Server } = require("socket.io");
 const io = new Server(server);
+const serviceAccountJSON = require('./serviceAccount')
+const serviceAccount = JSON.parse(JSON.stringify(serviceAccountJSON.serviceAccount))
 
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',
@@ -26,7 +29,48 @@ const port = process.env.PORT || 3000;
 server.listen(port, () => {
   console.log(`🚀  Server listening on port ${port}`);
 });
-const api = express.Router();
+// const api = express.Router();
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+  // NOTE: requiring a database is optional
+  // databaseURL: 
+})
+
+const message = (token) => {
+  return (
+    {
+  notification: {
+    title: 'You have a new message from Curovate',
+    body: 'The Physical Therapist has responded to your question on Curovate…'
+  },
+  data: {
+
+  },
+  android: {
+    notification: {
+      sound: 'default'
+    }
+  },
+  apns: {
+    payload: {
+      aps: {
+        sound: 'default'
+      }
+    }
+  }, 
+  token: token
+}
+)}
+
+// admin.messaging().send(message("dTpN-BcuzELIr1YlksYuHr:APA91bEypdponqYJXqt0WY3xdY3ogUCrVlDaQfeygGbKElPFgrQJy9ZIWKRMe0phZSFmzC6PNKrUIjStXuAnwoSd2sak_0ZUcPH7xV1TYgJArjziXzAGhZ9A7XOCWgwT3bA-mSuKyOFo"))
+//   .then(response => {
+//     console.log('Successfully sent message:', response)
+//   })
+//   .catch(error => {
+//     console.log('Error sending message: ', error)
+//   })
+
 
 let onlineUsers = {}
 
@@ -76,8 +120,17 @@ const sendNotificationAddUnreadMsgs = async (conversation_id) => {
     const userEmail = await sequelize.query(`SELECT email FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
     await sequelize.query(`UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.UPDATE})
     const numberOfUnreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
+    const fbToken = await sequelize.query(`SELECT token FROM firebase_tokens WHERE email ='${userEmail[0].email}'`, { type: QueryTypes.SELECT })
     console.log(`sending unread message number ${numberOfUnreadMsgs[0].unread_msgs} to:`, onlineUsers[userEmail[0].email], ` at email ${userEmail[0].email}`)
     io.to(onlineUsers[userEmail[0].email]).emit('updateUnreadMsgs', `${numberOfUnreadMsgs[0].unread_msgs}`)
+    console.log(fbToken)
+    admin.messaging().send(message(fbToken[0].token))
+    .then(response => {
+      console.log('Successfully sent message:', response)
+    })
+    .catch(error => {
+      console.log('Error sending message: ', error)
+    })
     return {
       unreadMsgs: numberOfUnreadMsgs[0].unread_msgs,
       email: userEmail[0].email,
@@ -127,4 +180,25 @@ app.get('/getunreadmsgs/:email', async (req, res) => {
   const email = req.params.email
   const unreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE email = '${email}'`, { type: QueryTypes.SELECT})
   res.json({ unreadMsgs })
+})
+
+app.get('/fbtokens/:email', async (req, res) => {
+  const email = req.params.email
+  const fbToken = await sequelize.query(`SELECT fb_token FROM firebase_tokens WHERE email = '${email}'`, { type: QueryTypes.SELECT})
+  res.json({ fbToken })
+})
+
+app.post('/fbtokens/:email', async (req, res) => {
+  const { email, token }  = req.body
+  console.log(req.body)
+  const isToken = await sequelize.query(`SELECT EXISTS(SELECT token FROM firebase_tokens WHERE email = '${email}')`, { type: QueryTypes.SELECT })
+  console.log(isToken)
+  if (isToken) {
+    await sequelize.query(`UPDATE firebase_tokens SET token = '${token}' WHERE email = '${email}'`, { type: QueryTypes.UPDATE })
+    res.json({ result: 'successfully updated token to the database' })
+  } else {
+    const insertTokenRow = await sequelize.query(`INSERT INTO firebase_tokens (email, token) VALUES ('${email}', '${token}')`, { type: QueryTypes.INSERT })
+    console.log(insertTokenRow)
+    res.json({ result: 'successfully inserted token to the database' })
+  }
 })

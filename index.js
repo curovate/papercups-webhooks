@@ -45,7 +45,7 @@ const message = (token, unreadMsgCount) => {
     body: 'The Physical Therapist has responded to your question on Curovate…'
   },
   data: {
-    unreadMsgs: unreadMsgCount,
+    unreadMsgs: unreadMsgCount.toString(),
   },
   android: {
     notification: {

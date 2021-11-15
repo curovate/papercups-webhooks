@@ -42,7 +42,7 @@ const message = (token, messageContent) => {
     {
   notification: {
     title: 'You have a new message from Curovate',
-    body: messageContent.length < 30 ? messageContent : `${messageContent.substring(0, 30)}...`
+    body: messageContent.length < 30 ? messageContent : `${messageContent.substring(0, 35)}...`
   },
   data: {
 
@@ -77,13 +77,13 @@ const data = (token, data) => {
     }
 )} 
 
-admin.messaging().send(data("fYZqenUdlUWVq5aVz6crUZ:APA91bG06o_FISQNzsyFTt0-gZnvitU4rH4qfISPJkC4Kiyi5KDMd0wgAdSV0_Bt3dWwaZjXsSDPU7Un9PN4VJW5_x_ekaXFMZ3L175UFrd5EXQ7usBshkCzgkT0mszTNhB5u-ZQ38dg", "5"))
-  .then(response => {
-    console.log('Successfully sent message:', response)
-  })
-  .catch(error => {
-    console.log('Error sending message: ', error)
-  })
+// admin.messaging().send(data("fYZqenUdlUWVq5aVz6crUZ:APA91bG06o_FISQNzsyFTt0-gZnvitU4rH4qfISPJkC4Kiyi5KDMd0wgAdSV0_Bt3dWwaZjXsSDPU7Un9PN4VJW5_x_ekaXFMZ3L175UFrd5EXQ7usBshkCzgkT0mszTNhB5u-ZQ38dg", "5"))
+//   .then(response => {
+//     console.log('Successfully sent message:', response)
+//   })
+//   .catch(error => {
+//     console.log('Error sending message: ', error)
+//   })
 
 // admin.messaging().send(message("fYZqenUdlUWVq5aVz6crUZ:APA91bG06o_FISQNzsyFTt0-gZnvitU4rH4qfISPJkC4Kiyi5KDMd0wgAdSV0_Bt3dWwaZjXsSDPU7Un9PN4VJW5_x_ekaXFMZ3L175UFrd5EXQ7usBshkCzgkT0mszTNhB5u-ZQ38dg"))
 //   .then(response => {
@@ -155,7 +155,7 @@ const sendNotificationAddUnreadMsgs = async (conversation_id, messageContent) =>
       console.log('Error sending message: ', error)
     })
 
-    admin.messaging().send(data(fbToken[0].token), numberOfUnreadMsgs)
+    admin.messaging().send(data(fbToken[0].token), numberOfUnreadMsgs[0].unread_msgs)
     .then(response => {
       console.log('Successfully sent data message:', response)
     })

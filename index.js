@@ -37,15 +37,15 @@ admin.initializeApp({
   // databaseURL: 
 })
 
-const message = (token, unreadMsgCount) => {
+const message = (token, messageContent) => {
   return (
     {
   notification: {
     title: 'You have a new message from Curovate',
-    body: 'The Physical Therapist has responded to your question on Curovate…'
+    body: messageContent.length < 30 ? messageContent : `${messageContent.substring(0, 30)}...`
   },
   data: {
-    unreadMsgs: unreadMsgCount.toString(),
+
   },
   android: {
     notification: {
@@ -63,7 +63,29 @@ const message = (token, unreadMsgCount) => {
 }
 )}
 
-// admin.messaging().send(message("dTpN-BcuzELIr1YlksYuHr:APA91bEypdponqYJXqt0WY3xdY3ogUCrVlDaQfeygGbKElPFgrQJy9ZIWKRMe0phZSFmzC6PNKrUIjStXuAnwoSd2sak_0ZUcPH7xV1TYgJArjziXzAGhZ9A7XOCWgwT3bA-mSuKyOFo"))
+const data = (token, data) => {
+  return (
+    {
+      "token": token,
+        "data": {
+          "title": "New message from Curovate",
+          "body": "This message is to update the app icon badge",
+          "icon": "https://shortcut-test2.s3.amazonaws.com/uploads/role_image/attachment/10461/thumb_image.jpg",
+          "link": "https://yourapp.com/somewhere",
+          "unreadMsgs": data.toString()
+        }
+    }
+)} 
+
+admin.messaging().send(data("fYZqenUdlUWVq5aVz6crUZ:APA91bG06o_FISQNzsyFTt0-gZnvitU4rH4qfISPJkC4Kiyi5KDMd0wgAdSV0_Bt3dWwaZjXsSDPU7Un9PN4VJW5_x_ekaXFMZ3L175UFrd5EXQ7usBshkCzgkT0mszTNhB5u-ZQ38dg", "5"))
+  .then(response => {
+    console.log('Successfully sent message:', response)
+  })
+  .catch(error => {
+    console.log('Error sending message: ', error)
+  })
+
+// admin.messaging().send(message("fYZqenUdlUWVq5aVz6crUZ:APA91bG06o_FISQNzsyFTt0-gZnvitU4rH4qfISPJkC4Kiyi5KDMd0wgAdSV0_Bt3dWwaZjXsSDPU7Un9PN4VJW5_x_ekaXFMZ3L175UFrd5EXQ7usBshkCzgkT0mszTNhB5u-ZQ38dg"))
 //   .then(response => {
 //     console.log('Successfully sent message:', response)
 //   })
@@ -114,7 +136,7 @@ app.get('/', (req, res) => {
   res.send('This is the home for the webhooks for Curovate Chat')
 })
 
-const sendNotificationAddUnreadMsgs = async (conversation_id) => {
+const sendNotificationAddUnreadMsgs = async (conversation_id, messageContent) => {
   try {
     const customer =  await sequelize.query(`SELECT customer_id FROM conversations WHERE id = '${conversation_id}'`, { type: QueryTypes.SELECT });
     const userEmail = await sequelize.query(`SELECT email FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
@@ -124,13 +146,22 @@ const sendNotificationAddUnreadMsgs = async (conversation_id) => {
     console.log(`sending unread message number ${numberOfUnreadMsgs[0].unread_msgs} to:`, onlineUsers[userEmail[0].email], ` at email ${userEmail[0].email}`)
     io.to(onlineUsers[userEmail[0].email]).emit('updateUnreadMsgs', `${numberOfUnreadMsgs[0].unread_msgs}`)
     console.log(fbToken[0].token)
-    admin.messaging().send(message(fbToken[0].token, numberOfUnreadMsgs[0].unread_msgs))
+    admin.messaging().send(message(fbToken[0].token, messageContent))
     .then(response => {
       console.log('Successfully sent message:', response)
     })
     .catch(error => {
       console.log('Error sending message: ', error)
     })
+
+    admin.messaging().send(data(fbToken[0].token), numberOfUnreadMsgs)
+    .then(response => {
+      console.log('Successfully sent data message:', response)
+    })
+    .catch(error => {
+      console.log('Error sending data message: ', error)
+    })
+
     return {
       unreadMsgs: numberOfUnreadMsgs[0].unread_msgs,
       email: userEmail[0].email,
@@ -162,7 +193,7 @@ app.post('/', (req, res) => {
       // console.log('CUSTOMER INFO:', payload.customer ? payload.customer : null)
       // console.log('USER INFO:', payload.user ? payload.user : null)
     if (payload.user) {
-      sendNotificationAddUnreadMsgs(payload.conversation_id)
+      sendNotificationAddUnreadMsgs(payload.conversation_id, payload.body)
     }
     case 'conversation:created':
 

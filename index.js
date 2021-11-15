@@ -137,13 +137,14 @@ app.get('/', (req, res) => {
 })
 
 const sendNotificationAddUnreadMsgs = async (conversation_id, messageContent) => {
+  console.log(messageContent)
   try {
     const customer =  await sequelize.query(`SELECT customer_id FROM conversations WHERE id = '${conversation_id}'`, { type: QueryTypes.SELECT });
     const userEmail = await sequelize.query(`SELECT email FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
     await sequelize.query(`UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.UPDATE})
     const numberOfUnreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
     const fbToken = await sequelize.query(`SELECT token FROM firebase_tokens WHERE email ='${userEmail[0].email}'`, { type: QueryTypes.SELECT })
-    console.log(`sending unread message number ${numberOfUnreadMsgs[0].unread_msgs} to:`, onlineUsers[userEmail[0].email], ` at email ${userEmail[0].email}`)
+    console.log(`sending unread message number ${numberOfUnreadMsgs[0].unread_msgs} to:`, onlineUsers[userEmail[0].email], ` at email ${userEmail[0].email} at token ${fbToken[0].token}`)
     io.to(onlineUsers[userEmail[0].email]).emit('updateUnreadMsgs', `${numberOfUnreadMsgs[0].unread_msgs}`)
     console.log(fbToken[0].token)
     admin.messaging().send(message(fbToken[0].token, messageContent))

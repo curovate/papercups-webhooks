@@ -155,7 +155,7 @@ const sendNotificationAddUnreadMsgs = async (conversation_id, messageContent) =>
       console.log('Error sending message: ', error)
     })
 
-    admin.messaging().send(data(fbToken[0].token), numberOfUnreadMsgs[0].unread_msgs)
+    admin.messaging().send(data(fbToken[0].token, numberOfUnreadMsgs[0].unread_msgs))
     .then(response => {
       console.log('Successfully sent data message:', response)
     })

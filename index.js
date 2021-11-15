@@ -222,13 +222,15 @@ app.get('/fbtokens/:email', async (req, res) => {
 
 app.post('/fbtokens', async (req, res) => {
   const { email, token }  = req.body
-  console.log(req.body)
+  console.log('updating tokens...the body is:', req.body)
   const isToken = await sequelize.query(`SELECT EXISTS(SELECT token FROM firebase_tokens WHERE email = '${email}')`, { type: QueryTypes.SELECT })
   console.log(isToken[0].exists)
   if (isToken[0].exists) {
+    console.log('updating user with a new token:', token)
     await sequelize.query(`UPDATE firebase_tokens SET token = '${token}' WHERE email = '${email}'`, { type: QueryTypes.UPDATE })
     res.json({ result: 'successfully updated token to the database' })
   } else {
+    console.log('inserting a new row for a token:', token)
     const insertTokenRow = await sequelize.query(`INSERT INTO firebase_tokens (email, updated_at, token) VALUES ('${email}', current_timestamp, '${token}')`, { type: QueryTypes.INSERT })
     console.log(insertTokenRow)
     res.json({ result: 'successfully inserted token to the database' })

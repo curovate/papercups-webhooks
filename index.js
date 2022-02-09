@@ -313,7 +313,7 @@ app.post("/fbtokens", async (req, res) => {
 
 app.post("/validate_android_receipt", async (req, res) => {
   console.log(req.body)
-  const data = JSON.parse(req.body)
+  const data = req.body
   console.log('validating android receipt')
   const auth = new google.auth.GoogleAuth({
     keyFile: serviceAccountAndroidReceipt,

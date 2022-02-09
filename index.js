@@ -22,7 +22,6 @@ const serviceAccountAndroidReceipt = JSON.parse(
   JSON.stringify(serviceAccountAndroidJSON.serviceAccountAndroidReceipt)
 )
 const { google } = require("googleapis")
-const { rmSync } = require("fs")
 // --- SETUP ---
 
 // initialize the DB
@@ -320,6 +319,7 @@ app.post("/validate_android_receipt", async (req, res) => {
     scopes: ["https://www.googleapis.com/auth/androidpublisher"],
   })
   console.log("data:", data["productId"], data["purchaseToken"])
+  console.log('typeof auth', typeof auth)
   try {
     const result = await google.androidpublisher("v3").purchases.subscriptions.get({
       packageName: "cura.com.cura",

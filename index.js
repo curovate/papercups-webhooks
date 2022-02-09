@@ -319,13 +319,12 @@ app.post("/validate_android_receipt", async (req, res) => {
     keyFile: serviceAccountAndroidReceipt,
     scopes: ["https://www.googleapis.com/auth/androidpublisher"],
   })
-  console.log('auth has passed', auth)
   console.log("data:", data["productId"], data["purchaseToken"])
   try {
     const result = await google.androidpublisher("v3").purchases.subscriptions.get({
       packageName: "cura.com.cura",
-      subscriptionId: data["productId"],
-      token: data["purchaseToken"],
+      subscriptionId: JSON.parse(data)["productId"],
+      token: JSON.parse(data)["purchaseToken"],
       auth: auth
     })
     .then((result) => console.log('res from Android validation:', result))

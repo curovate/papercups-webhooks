@@ -323,8 +323,8 @@ app.post("/validate_android_receipt", async (req, res) => {
   try {
     const result = await google.androidpublisher("v3").purchases.subscriptions.get({
       packageName: "cura.com.cura",
-      subscriptionId: 'hagabpffcjocjmengppdlodd.AO-J1OyNF7d3j8ocOBlbYmjZXMbE4WW2QcE8cU8kd5C1XgB2dESiW7vo-b_I0Pn_kekt_c_SJmZ4CiT2DcMSRotArbeSigF9CQ',
-      token: JSON.parse(data)["purchaseToken"],
+      subscriptionId: 'monthly_subscription',
+      token: `hagabpffcjocjmengppdlodd.AO-J1OyNF7d3j8ocOBlbYmjZXMbE4WW2QcE8cU8kd5C1XgB2dESiW7vo-b_I0Pn_kekt_c_SJmZ4CiT2DcMSRotArbeSigF9CQ`,
       auth: auth
     })
     .then((result) => console.log('res from Android validation:', result))

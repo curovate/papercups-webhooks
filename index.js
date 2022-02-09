@@ -315,7 +315,7 @@ app.post("/validate_android_receipt", async (req, res) => {
   const data = req.body
   console.log('validating android receipt')
   const auth = new google.auth.GoogleAuth({
-    keyFile: serviceAccountAndroidReceipt,
+    keyFile: "api-8843549224472406297-496330-0d939b050704",
     scopes: ["https://www.googleapis.com/auth/androidpublisher"],
   })
   console.log("data:", data["productId"], data["purchaseToken"])

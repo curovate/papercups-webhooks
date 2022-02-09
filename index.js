@@ -1,167 +1,202 @@
-const express = require('express');
-const app = express();
-const http = require('http');
-const server = http.createServer(app);
-require('dotenv').config();
-const Papercups = require('./papercups')(process.env.PAPERCUPS_API_KEY)
+// Summary:
+// This code uses socket.io for real-time message count update when the user has the app in the background
+// It also handles sending notifications to users when they have received a message from Papercups
+// It also is used for validating Android subscription receipts
+
+const express = require("express")
+const app = express()
+const http = require("http")
+const server = http.createServer(app)
+require("dotenv").config()
+const Papercups = require("./papercups")(process.env.PAPERCUPS_API_KEY)
 const admin = require("firebase-admin")
-const { Sequelize, QueryTypes } = require('sequelize');
-const { Server } = require("socket.io");
-const io = new Server(server);
-const serviceAccountJSON = require('./serviceAccount')
-const serviceAccount = JSON.parse(JSON.stringify(serviceAccountJSON.serviceAccount))
+const { Sequelize, QueryTypes } = require("sequelize")
+const { Server } = require("socket.io")
+const io = new Server(server)
+const serviceAccountJSON = require("./serviceAccount")
+const serviceAccount = JSON.parse(
+  JSON.stringify(serviceAccountJSON.serviceAccount)
+)
+const serviceAccountAndroidJSON = require("./serviceAccountAndroidReceipts")
+const serviceAccountAndroidReceipt = JSON.parse(
+  JSON.stringify(serviceAccountAndroidJSON.serviceAccountAndroidReceipt)
+)
+const { google } = require("googleapis")
+const { rmSync } = require("fs")
+// --- SETUP ---
 
+// initialize the DB
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialect: 'postgres',
-  protocol: 'postgres',
+  dialect: "postgres",
+  protocol: "postgres",
   dialectOptions: {
-      ssl: {
-          require: true,
-          rejectUnauthorized: false
-      }
-  }
-});
-
-app.use(express.json())
-app.use(express.urlencoded({extended: true}))
-
-const port = process.env.PORT || 3000;
-server.listen(port, () => {
-  console.log(`🚀  Server listening on port ${port}`);
-});
-// const api = express.Router();
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-  // NOTE: requiring a database is optional
-  // databaseURL: 
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
 })
 
-const message = (token, messageContent) => {
-  return (
-    {
-  notification: {
-    title: 'You have a new message from Curovate',
-    body: messageContent.length < 30 ? messageContent : `${messageContent.substring(0, 35)}...`
-  },
-  data: {
-
-  },
-  android: {
-    notification: {
-      sound: 'default'
-    }
-  },
-  apns: {
-    payload: {
-      aps: {
-        sound: 'default'
-      }
-    }
-  }, 
-  token: token
-}
-)}
-
-const data = (token, data) => {
-  return (
-    {
-      "token": token,
-        "data": {
-          "title": "New message from Curovate",
-          "body": "This message is to update the app icon badge",
-          "icon": "https://shortcut-test2.s3.amazonaws.com/uploads/role_image/attachment/10461/thumb_image.jpg",
-          "link": "https://yourapp.com/somewhere",
-          "unreadMsgs": data.toString()
-        }
-    }
-)} 
-
-// admin.messaging().send(data("fYZqenUdlUWVq5aVz6crUZ:APA91bG06o_FISQNzsyFTt0-gZnvitU4rH4qfISPJkC4Kiyi5KDMd0wgAdSV0_Bt3dWwaZjXsSDPU7Un9PN4VJW5_x_ekaXFMZ3L175UFrd5EXQ7usBshkCzgkT0mszTNhB5u-ZQ38dg", "5"))
-//   .then(response => {
-//     console.log('Successfully sent message:', response)
-//   })
-//   .catch(error => {
-//     console.log('Error sending message: ', error)
-//   })
-
-// admin.messaging().send(message("fYZqenUdlUWVq5aVz6crUZ:APA91bG06o_FISQNzsyFTt0-gZnvitU4rH4qfISPJkC4Kiyi5KDMd0wgAdSV0_Bt3dWwaZjXsSDPU7Un9PN4VJW5_x_ekaXFMZ3L175UFrd5EXQ7usBshkCzgkT0mszTNhB5u-ZQ38dg"))
-//   .then(response => {
-//     console.log('Successfully sent message:', response)
-//   })
-//   .catch(error => {
-//     console.log('Error sending message: ', error)
-//   })
-
-
-let onlineUsers = {}
-
-io.on('connection', (socket) => {
-  console.log('onlineUsers:', onlineUsers)
-
-  socket.on('online',()=>{
-    //do nothing
-  })
-
-  socket.on("sendEmail", (email) => {
-    onlineUsers[email] = socket.id
-    console.log('online users:', onlineUsers)
-  })
-
-  io.to(socket.id).emit('private', `hello user with id of ${socket.id}`)
-
-  socket.on("disconnect", () => {
-    console.log(`user ${socket.id} has disconnected`)
-  })
-
-  socket.on("error", (err) => {
-    console.error(err)
-    socket.disconnect();
-  })
-
-});
-
+// connect to the DB
 const makeConnection = async () => {
   try {
-    await sequelize.authenticate();
-    console.log('Connection has been established successfully.');
+    await sequelize.authenticate()
+    console.log("Connection has been established successfully.")
   } catch (error) {
-    console.error('Unable to connect to the database:', error);
+    console.error("Unable to connect to the database:", error)
   }
 }
 
 makeConnection()
 
-app.get('/', (req, res) => {
-  res.send('This is the home for the webhooks for Curovate Chat')
+// Express middleware
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
+// Set up port for listening for events
+// process.env.PORT will allow the app to connect to Heroku
+const port = process.env.PORT || 3000
+server.listen(port, () => {
+  console.log(`🚀  Server listening on port ${port}`)
 })
 
-const sendNotificationAddUnreadMsgs = async (conversation_id, messageContent) => {
+// initialize Firebase for notifications
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+})
+
+// template for notification messages
+const message = (token, messageContent) => {
+  return {
+    notification: {
+      title: "You have a new message from Curovate",
+      body:
+        messageContent.length < 30
+          ? messageContent
+          : `${messageContent.substring(0, 35)}...`,
+    },
+    data: {},
+    android: {
+      notification: {
+        sound: "default",
+      },
+    },
+    apns: {
+      payload: {
+        aps: {
+          sound: "default",
+        },
+      },
+    },
+    token: token,
+  }
+}
+
+// template for updating icon badge when a user gets a notification for an unread message
+const data = (token, data) => {
+  return {
+    token: token,
+    data: {
+      title: "New message from Curovate",
+      body: "This message is to update the app icon badge",
+      icon: "https://shortcut-test2.s3.amazonaws.com/uploads/role_image/attachment/10461/thumb_image.jpg",
+      link: "https://yourapp.com/somewhere",
+      unreadMsgs: data.toString(),
+    },
+  }
+}
+
+// the onlineUsers object will store the IDs of users that have Curovate open
+let onlineUsers = {}
+
+// initialize socket.io
+// socket.io is a library that listens to real time changes im the app
+// when a user has Curovate open, their email address will be added to the onlineUsers object
+// the onlineUsers object is used to get the user's email to send notifications
+io.on("connection", socket => {
+  console.log("onlineUsers:", onlineUsers)
+
+  socket.on("online", () => {})
+
+  socket.on("sendEmail", email => {
+    onlineUsers[email] = socket.id
+    console.log("online users:", onlineUsers)
+  })
+
+  io.to(socket.id).emit("private", `hello user with id of ${socket.id}`)
+
+  socket.on("disconnect", () => {
+    console.log(`user ${socket.id} has disconnected`)
+  })
+
+  socket.on("error", err => {
+    console.error(err)
+    socket.disconnect()
+  })
+})
+
+// --- FUNCTIONS ---
+
+// this function will send a notification to the user and increment the app icon badge
+const sendNotificationAddUnreadMsgs = async (
+  conversation_id,
+  messageContent
+) => {
   console.log(messageContent)
   try {
-    const customer =  await sequelize.query(`SELECT customer_id FROM conversations WHERE id = '${conversation_id}'`, { type: QueryTypes.SELECT });
-    const userEmail = await sequelize.query(`SELECT email FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
-    await sequelize.query(`UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.UPDATE})
-    const numberOfUnreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE id = '${customer[0].customer_id}'`, { type: QueryTypes.SELECT})
-    const fbToken = await sequelize.query(`SELECT token FROM firebase_tokens WHERE email ='${userEmail[0].email}'`, { type: QueryTypes.SELECT })
-    console.log(`sending unread message number ${numberOfUnreadMsgs[0].unread_msgs} to:`, onlineUsers[userEmail[0].email], ` at email ${userEmail[0].email} at token ${fbToken[0].token}`)
-    io.to(onlineUsers[userEmail[0].email]).emit('updateUnreadMsgs', `${numberOfUnreadMsgs[0].unread_msgs}`)
+    // get the user's email, number of unread messages, and firebase token from the database
+    const customer = await sequelize.query(
+      `SELECT customer_id FROM conversations WHERE id = '${conversation_id}'`,
+      { type: QueryTypes.SELECT }
+    )
+    const userEmail = await sequelize.query(
+      `SELECT email FROM customers WHERE id = '${customer[0].customer_id}'`,
+      { type: QueryTypes.SELECT }
+    )
+    await sequelize.query(
+      `UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customer[0].customer_id}'`,
+      { type: QueryTypes.UPDATE }
+    )
+    const numberOfUnreadMsgs = await sequelize.query(
+      `SELECT unread_msgs FROM customers WHERE id = '${customer[0].customer_id}'`,
+      { type: QueryTypes.SELECT }
+    )
+    const fbToken = await sequelize.query(
+      `SELECT token FROM firebase_tokens WHERE email ='${userEmail[0].email}'`,
+      { type: QueryTypes.SELECT }
+    )
+    console.log(
+      `sending unread message number ${numberOfUnreadMsgs[0].unread_msgs} to:`,
+      onlineUsers[userEmail[0].email],
+      ` at email ${userEmail[0].email} at token ${fbToken[0].token}`
+    )
+    io.to(onlineUsers[userEmail[0].email]).emit(
+      "updateUnreadMsgs",
+      `${numberOfUnreadMsgs[0].unread_msgs}`
+    )
     console.log(fbToken[0].token)
-    admin.messaging().send(message(fbToken[0].token, messageContent))
-    .then(response => {
-      console.log('Successfully sent message:', response)
-    })
-    .catch(error => {
-      console.log('Error sending message: ', error)
-    })
 
-    admin.messaging().send(data(fbToken[0].token, numberOfUnreadMsgs[0].unread_msgs))
-    .then(response => {
-      console.log('Successfully sent data message:', response)
-    })
-    .catch(error => {
-      console.log('Error sending data message: ', error)
-    })
+    // send the notification
+    admin
+      .messaging()
+      .send(message(fbToken[0].token, messageContent))
+      .then(response => {
+        console.log("Successfully sent message:", response)
+      })
+      .catch(error => {
+        console.log("Error sending message: ", error)
+      })
+
+    // increment the app icon badge
+    admin
+      .messaging()
+      .send(data(fbToken[0].token, numberOfUnreadMsgs[0].unread_msgs))
+      .then(response => {
+        console.log("Successfully sent data message:", response)
+      })
+      .catch(error => {
+        console.log("Error sending data message: ", error)
+      })
 
     return {
       unreadMsgs: numberOfUnreadMsgs[0].unread_msgs,
@@ -172,68 +207,135 @@ const sendNotificationAddUnreadMsgs = async (conversation_id, messageContent) =>
   }
 }
 
-const markMsgsAsRead = async (customerEmail) => {
+// this function will reset the user's number of unread messages to 0
+const markMsgsAsRead = async customerEmail => {
   try {
-    await sequelize.query(`UPDATE customers SET unread_msgs = 0 WHERE email = '${customerEmail}'`, { type: QueryTypes.UPDATE})
-    console.log('messages have been cleared')
+    await sequelize.query(
+      `UPDATE customers SET unread_msgs = 0 WHERE email = '${customerEmail}'`,
+      { type: QueryTypes.UPDATE }
+    )
+    console.log("messages have been cleared")
   } catch (error) {
     console.error(error)
   }
 }
 
+// --- ROUTES ---
 
-app.post('/', (req, res) => {
-  const {event, payload} = req.body;
+// this is a test route and is used just for testing purposes
+// if the app is deployed correctly, then it will return a simple HTML page with the message below
+app.get("/", (req, res) => {
+  res.send("This is the home for the webhooks for Curovate Chat")
+})
 
+// all messages sent through Papercups will run this post request
+// the url of this app (curovate-webportal.herokuapp.com) was added to the "event subscriptions" menu in the web portal
+app.post("/", (req, res) => {
+  const { event, payload } = req.body
   switch (event) {
-    case 'webhook:verify':
+    case "webhook:verify":
+      // TODO: add optional webhook for when an account is verified
+      return res.send(payload)
+    case "message:created":
+      // TODO: add optional webhook for when a message is created
 
-      return res.send(payload);
-    case 'message:created':
-      // console.log('PAYLOAD INFO:', payload)
-      // console.log('CUSTOMER INFO:', payload.customer ? payload.customer : null)
-      // console.log('USER INFO:', payload.user ? payload.user : null)
-    if (payload.user) {
-      sendNotificationAddUnreadMsgs(payload.conversation_id, payload.body)
-    }
-    case 'conversation:created':
-
-    case 'customer:created':
+      // if the payload object includes a user attribute, which occurs when a message is sent from the web portal
+      // then the sendNotificationAddUnreadMsgs function will run
+      if (payload.user) {
+        console.log("main endpoint reached. Sending notification to user...")
+        sendNotificationAddUnreadMsgs(payload.conversation_id, payload.body)
+      }
+    case "conversation:created":
+    // TODO: add optional webhook for when a conversation is created
+    case "customer:created":
+    // TODO: add optional webhook for when a customer is created
   }
 })
 
-app.post('/markmsgsasread/:email', (req, res) => {
+// route to mark all messages as unread, resetting the number of unread messages to 0
+// this runs whenever the user opens the Chat screen on Curovate
+app.post("/markmsgsasread/:email", (req, res) => {
   const email = req.params.email
   markMsgsAsRead(email)
-  res.json({ unreadMsgs: 0})
+  res.json({ unreadMsgs: 0 })
 })
 
-app.get('/getunreadmsgs/:email', async (req, res) => {
+// route to get the number of unread messages
+// this runs when the user opens the app or puts the app in the background state
+app.get("/getunreadmsgs/:email", async (req, res) => {
   const email = req.params.email
-  const unreadMsgs = await sequelize.query(`SELECT unread_msgs FROM customers WHERE email = '${email}'`, { type: QueryTypes.SELECT})
+  const unreadMsgs = await sequelize.query(
+    `SELECT unread_msgs FROM customers WHERE email = '${email}'`,
+    { type: QueryTypes.SELECT }
+  )
   res.json({ unreadMsgs })
 })
 
-app.get('/fbtokens/:email', async (req, res) => {
+// route to get the user's Firebase token. This runs when the user reopens the app
+app.get("/fbtokens/:email", async (req, res) => {
   const email = req.params.email
-  const fbToken = await sequelize.query(`SELECT fb_token FROM firebase_tokens WHERE email = '${email}'`, { type: QueryTypes.SELECT})
+  const fbToken = await sequelize.query(
+    `SELECT fb_token FROM firebase_tokens WHERE email = '${email}'`,
+    { type: QueryTypes.SELECT }
+  )
   res.json({ fbToken })
 })
 
-app.post('/fbtokens', async (req, res) => {
-  const { email, token }  = req.body
-  console.log('updating tokens...the body is:', req.body)
-  const isToken = await sequelize.query(`SELECT EXISTS(SELECT token FROM firebase_tokens WHERE email = '${email}')`, { type: QueryTypes.SELECT })
+// route to post the user's Firebase token on the database. This runs when the user first opens the app
+app.post("/fbtokens", async (req, res) => {
+  const { email, token } = req.body
+  console.log("updating tokens...the body is:", req.body)
+  const isToken = await sequelize.query(
+    `SELECT EXISTS(SELECT token FROM firebase_tokens WHERE email = '${email}')`,
+    { type: QueryTypes.SELECT }
+  )
   console.log(isToken[0].exists)
+
+  // if the user already has a token, then overwrite the existing token with the new one
+  // if the user does not have a token, then add the token to the database
   if (isToken[0].exists) {
-    console.log('updating user with a new token:', token)
-    await sequelize.query(`UPDATE firebase_tokens SET token = '${token}' WHERE email = '${email}'`, { type: QueryTypes.UPDATE })
-    res.json({ result: 'successfully updated token to the database' })
+    console.log("updating user with a new token:", token)
+    await sequelize.query(
+      `UPDATE firebase_tokens SET token = '${token}' WHERE email = '${email}'`,
+      { type: QueryTypes.UPDATE }
+    )
+    res.json({ result: "successfully updated token to the database" })
   } else {
-    console.log('inserting a new row for a token:', token)
-    const insertTokenRow = await sequelize.query(`INSERT INTO firebase_tokens (email, updated_at, token) VALUES ('${email}', current_timestamp, '${token}')`, { type: QueryTypes.INSERT })
+    console.log("inserting a new row for a token:", token)
+    const insertTokenRow = await sequelize.query(
+      `INSERT INTO firebase_tokens (email, updated_at, token) VALUES ('${email}', current_timestamp, '${token}')`,
+      { type: QueryTypes.INSERT }
+    )
     console.log(insertTokenRow)
-    res.json({ result: 'successfully inserted token to the database' })
+    res.json({ result: "successfully inserted token to the database" })
   }
 })
 
+app.post("/validate_android_receipt", async (req, res) => {
+  const data = JSON.parse(req.body.data)
+  console.log('validating android receipt')
+  const auth = new google.auth.GoogleAuth({
+    keyFile: serviceAccountAndroidReceipt,
+    scopes: ["https://www.googleapis.com/auth/androidpublisher"],
+  })
+
+  try {
+    const result = await google.androidpublisher("v3").purchases.subscriptions.get({
+      packageName: "cura.com.cura",
+      subscriptionId: data["productId"],
+      token: data["purchaseToken"],
+      auth: auth
+    })
+    .then((result) => console.log('res from Android validation:', result))
+
+    if (res.status === 200) {
+      res.json({ validationSuccess: true })
+    } else {
+      res.json({ validationSuccess: false })
+    }
+
+  } catch (error) {
+    console.error('error validating Android receipt:', error)
+    res.json({ validationSuccess: false })
+  }
+})

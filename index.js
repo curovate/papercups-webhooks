@@ -319,7 +319,7 @@ app.post("/validate_android_receipt", async (req, res) => {
     keyFile: serviceAccountAndroidReceipt,
     scopes: ["https://www.googleapis.com/auth/androidpublisher"],
   })
-
+  console.log('auth has passed')
   try {
     const result = await google.androidpublisher("v3").purchases.subscriptions.get({
       packageName: "cura.com.cura",

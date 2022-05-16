@@ -22,6 +22,10 @@ const serviceAccountAndroidReceipt = JSON.parse(
   JSON.stringify(serviceAccountAndroidJSON.serviceAccountAndroidReceipt)
 )
 const { google } = require("googleapis")
+const mailgun = require("mailgun-js");
+const DOMAIN = "curovate.com";
+const mg = mailgun({apiKey: process.env.MAILGUN_API_KEY, domain: DOMAIN});
+
 // --- SETUP ---
 
 // initialize the DB
@@ -135,6 +139,7 @@ io.on("connection", socket => {
 })
 
 // --- FUNCTIONS ---
+
 
 // this function will send a notification to the user and increment the app icon badge
 const sendNotificationAddUnreadMsgs = async (
@@ -310,6 +315,8 @@ app.post("/fbtokens", async (req, res) => {
   }
 })
 
+
+// INCOMPLETE - this is trying to validate Android Play Store receipts on the server side
 app.post("/validate_android_receipt", async (req, res) => {
   console.log(req.body)
   const data = req.body
@@ -339,4 +346,16 @@ app.post("/validate_android_receipt", async (req, res) => {
     console.error('error validating Android receipt:', error)
     res.json({ validationSuccess: false })
   }
+})
+
+app.post("/ghost_new_post", async (req, res) => {
+  const data = {
+    from: "Mailgun Sandbox <postmaster@curovate.com>",
+    to: "wilsonfong1002@outlook.com",
+    subject: "Hello",
+    template: "new_blog_post",
+  };
+  mg.messages().send(data, function (error, body) {
+    console.log(body);
+  });
 })

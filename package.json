@@ -17,6 +17,7 @@
     "firebase-admin": "^10.0.0",
     "googleapis": "^95.0.0",
     "jsonwebtoken": "^8.5.1",
+    "mailgun-js": "^0.22.0",
     "nodemon": "^2.0.14",
     "pg": "^8.7.1",
     "pg-hstore": "^2.3.4",

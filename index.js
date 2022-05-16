@@ -25,6 +25,7 @@ const { google } = require("googleapis")
 const mailgun = require("mailgun-js");
 const DOMAIN = "curovate.com";
 const mg = mailgun({apiKey: process.env.MAILGUN_API_KEY, domain: DOMAIN});
+const rateLimit = require('express-rate-limit')
 
 // --- SETUP ---
 
@@ -348,13 +349,25 @@ app.post("/validate_android_receipt", async (req, res) => {
   }
 })
 
+const newPostLimiter = rateLimit({
+	windowMs: 2 * 60 * 1000, // 15 minutes
+	max: 1, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+})
+
+app.use('/ghost_new_post', newPostLimiter)
+
+
 app.post("/ghost_new_post", async (req, res) => {
+  
   const data = {
     from: "Mailgun Sandbox <postmaster@curovate.com>",
     to: "wilsonfong1002@outlook.com",
     subject: "Hello",
     template: "new_blog_post",
   };
+
   mg.messages().send(data, function (error, body) {
     console.log(body);
   });

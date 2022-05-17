@@ -372,9 +372,11 @@ const waitForBlogToPublish = (req, res, next) => {
   }, 10000)
 }
 
-app.post("/ghost_new_post", newPostLimiter, waitForBlogToPublish, async (req, res) => {
+app.post("/ghost_new_post", newPostLimiter,  async (req, res) => {
   console.log('running ghost webhook')
+  res.json({ success: true })
 
+  setTimeout(async () => {
     const api = new GhostContentAPI({
       url: 'https://curovate.com/blog',
       key: 'a0a55dea8c7ed03b59073c0ae4',
@@ -418,16 +420,14 @@ app.post("/ghost_new_post", newPostLimiter, waitForBlogToPublish, async (req, re
           console.log(body);
         }
       });
-
-      // NOTE: Try adding res.success() here if the index is length - 1
     })
-  
-  res.json({ success: true })
+  }, 10000)
 
 })
 
-app.post('/test', newPostLimiter, waitForBlogToPublish, async (req, res) => {
-  console.log('middleware is complete')
+app.post('/test', newPostLimiter, async (req, res) => {
   res.json({ success: true })
+  console.log('middleware is complete')
+  // res.json({ success: true })
 })
 

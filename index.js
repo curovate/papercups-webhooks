@@ -365,7 +365,9 @@ app.use('/api', newPostLimiter)
 // app.use('/ghost_new_post', testMiddleware)
 
 const waitForBlogToPublish = (req, res, next) => {
+  console.log('starting waitForBlogToPublish')
   setTimeout(() => {
+    console.log('finishing waitForBlogToPublish')
     next()
   }, 10000)
 }
@@ -416,10 +418,10 @@ app.post("/ghost_new_post", newPostLimiter, waitForBlogToPublish, async (req, re
           console.log(body);
         }
       });
+
+      // NOTE: Try adding res.success() here if the index is length - 1
     })
   
-  
-
   res.json({ success: true })
 
 })

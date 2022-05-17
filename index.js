@@ -463,6 +463,7 @@ app.post('/subscribe', newPostLimiter, async (req, res) => {
   const data = {
     from: "Nirtal Shah <nirtal@curovate.com>",
     to: subscriptionEmail,
+    bcc: ["nirtal@curovate.com", "wilsonfong1002@outlook.com"],
     subject: "Thank you for subscribing to our blog!",
     template: "new_blog_subscriber",
   };

@@ -395,7 +395,7 @@ app.post("/ghost_new_post", newPostLimiter,  async (req, res) => {
     const sheets = google.sheets({ version: 'v4', auth })
   
     const range = `Sheet1!A:A`
-    const link = "1DrAhIdjFtpO57FjkMM4_qKLTVrrqrIORSWIbZ62N3S0"
+    const link = process.env.GOOGLE_SHEETS_ID
   
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: link,
@@ -428,6 +428,50 @@ app.post("/ghost_new_post", newPostLimiter,  async (req, res) => {
 app.post('/test', newPostLimiter, async (req, res) => {
   res.json({ success: true })
   console.log('middleware is complete')
-  // res.json({ success: true })
+})
+
+app.post('/subscribe', newPostLimiter, async (req, res) => {
+
+  const { subscriptionEmail } = req.body
+  console.log(subscriptionEmail)
+  
+  const auth = await google.auth.getClient( { scopes: ['https://www.googleapis.com/auth/spreadsheets']});
+  const sheets = google.sheets({ version: 'v4', auth })
+
+  const range = `Sheet1!A1`
+  const link = process.env.GOOGLE_SHEETS_ID
+
+  const response = await sheets.spreadsheets.values.append({
+    spreadsheetId: link,
+    range,
+    valueInputOption: "RAW",
+    resource: {
+      "majorDimension": "COLUMNS",
+      "values": [[subscriptionEmail]] 
+    }
+  }, (err, result) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(`${result.data.tableRange} cells appended.`);
+    }
+  })
+
+  const data = {
+    from: "Nirtal Shah <nirtal@curovate.com>",
+    to: subscriptionEmail,
+    subject: "Thank you for subscribing to our blog!",
+    template: "new_blog_subscriber",
+  };
+
+  mg.messages().send(data, function (error, body) {
+    if (error) {
+      console.error(error)
+    } else {
+      console.log(body);
+    }
+  });
+
+  res.json({ success: true })
 })
 

@@ -365,8 +365,9 @@ app.use('/api', newPostLimiter)
 // app.use('/ghost_new_post', testMiddleware)
 
 app.post("/ghost_new_post", newPostLimiter, async (req, res) => {
+  console.log('running ghost webhook')
 
-  setTimeout( async () => {
+  setTimeout(async () => {
     const api = new GhostContentAPI({
       url: 'https://curovate.com/blog',
       key: 'a0a55dea8c7ed03b59073c0ae4',
@@ -378,6 +379,8 @@ app.post("/ghost_new_post", newPostLimiter, async (req, res) => {
       limit: 1, 
       include: 'tags,authors',
     })
+
+    console.log('latest blogpost:', newBlogPost)
   
     const auth = await google.auth.getClient( { scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']});
     const sheets = google.sheets({ version: 'v4', auth })
@@ -390,6 +393,8 @@ app.post("/ghost_new_post", newPostLimiter, async (req, res) => {
       range
     })
     
+    console.log('google sheets values:', response.data.values)
+
     response.data.values.forEach(value => {
       const data = {
         from: "Mailgun Sandbox <postmaster@curovate.com>",

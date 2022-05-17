@@ -27,6 +27,7 @@ const DOMAIN = "curovate.com";
 const mg = mailgun({apiKey: process.env.MAILGUN_API_KEY, domain: DOMAIN});
 const rateLimit = require('express-rate-limit')
 const GhostContentAPI = require('@tryghost/content-api');
+const cors = require('cors')
 // --- SETUP ---
 
 // initialize the DB
@@ -371,6 +372,8 @@ const waitForBlogToPublish = (req, res, next) => {
     next()
   }, 10000)
 }
+
+app.use(cors())
 
 app.post("/ghost_new_post", newPostLimiter,  async (req, res) => {
   console.log('running ghost webhook')

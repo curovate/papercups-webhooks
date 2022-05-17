@@ -367,7 +367,7 @@ app.use('/api', newPostLimiter)
 app.post("/ghost_new_post", newPostLimiter, async (req, res) => {
   console.log('running ghost webhook')
 
-  // setTimeout(async () => {
+  setTimeout(async () => {
     const api = new GhostContentAPI({
       url: 'https://curovate.com/blog',
       key: 'a0a55dea8c7ed03b59073c0ae4',
@@ -415,7 +415,9 @@ app.post("/ghost_new_post", newPostLimiter, async (req, res) => {
   
   
     res.json({ success: true })
-  // }, 10000)
+  }, 10000)
+
+  res.json({ success: true })
 
 })
 

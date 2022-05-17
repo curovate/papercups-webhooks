@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@tryghost/content-api": "^1.9.8",
     "axios": "^0.23.0",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
@@ -19,6 +20,7 @@
     "googleapis": "^95.0.0",
     "jsonwebtoken": "^8.5.1",
     "mailgun-js": "^0.22.0",
+    "node-fetch": "^3.2.4",
     "nodemon": "^2.0.14",
     "pg": "^8.7.1",
     "pg-hstore": "^2.3.4",

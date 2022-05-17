@@ -26,7 +26,7 @@ const mailgun = require("mailgun-js");
 const DOMAIN = "curovate.com";
 const mg = mailgun({apiKey: process.env.MAILGUN_API_KEY, domain: DOMAIN});
 const rateLimit = require('express-rate-limit')
-
+const GhostContentAPI = require('@tryghost/content-api');
 // --- SETUP ---
 
 // initialize the DB
@@ -349,26 +349,73 @@ app.post("/validate_android_receipt", async (req, res) => {
   }
 })
 
+
 const newPostLimiter = rateLimit({
-	windowMs: 2 * 60 * 1000, // 15 minutes
+	windowMs: 2 * 60 * 1000, // 2 minutes
 	max: 1, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
 	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
 	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 })
 
-app.use('/ghost_new_post', newPostLimiter)
+app.use('/api', newPostLimiter)
 
+// const testMiddleware = () => {
+//   console.log('testing middleware')
+// }
+// app.use('/ghost_new_post', testMiddleware)
 
-app.post("/ghost_new_post", async (req, res) => {
+app.post("/ghost_new_post", newPostLimiter, async (req, res) => {
+
+  setTimeout( async () => {
+    const api = new GhostContentAPI({
+      url: 'https://curovate.com/blog',
+      key: 'a0a55dea8c7ed03b59073c0ae4',
+      version: "v2"
+    });
   
-  const data = {
-    from: "Mailgun Sandbox <postmaster@curovate.com>",
-    to: "wilsonfong1002@outlook.com",
-    subject: "Hello",
-    template: "new_blog_post",
-  };
+    const newBlogPost = await api.posts
+      .browse({
+      limit: 1, 
+      include: 'tags,authors',
+    })
+  
+    const auth = await google.auth.getClient( { scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']});
+    const sheets = google.sheets({ version: 'v4', auth })
+  
+    const range = `Sheet1!A:A`
+    const link = "1DrAhIdjFtpO57FjkMM4_qKLTVrrqrIORSWIbZ62N3S0"
+  
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: link,
+      range
+    })
+    
+    response.data.values.forEach(value => {
+      const data = {
+        from: "Mailgun Sandbox <postmaster@curovate.com>",
+        to: value,
+        subject: "Hello",
+        template: "new_blog_post",
+        'h:X-Mailgun-Variables': JSON.stringify({blogUrl: newBlogPost[0].url})
+      };
+    
+      mg.messages().send(data, function (error, body) {
+        if (error) {
+          console.error(error)
+        } else {
+          console.log(body);
+        }
+      });
+    })
+  
+  
+    res.json({ success: true })
+  }, 10000)
 
-  mg.messages().send(data, function (error, body) {
-    console.log(body);
-  });
 })
+
+app.get('/test', async (req, res) => {
+
+  res.json({ success: true })
+})
+

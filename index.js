@@ -414,7 +414,7 @@ app.post("/ghost_new_post", newPostLimiter, async (req, res) => {
     })
   
   
-    res.json({ success: true })
+    // res.json({ success: true })
   }, 10000)
 
   res.json({ success: true })

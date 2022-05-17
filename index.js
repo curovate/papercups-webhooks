@@ -406,11 +406,11 @@ app.post("/ghost_new_post", newPostLimiter,  async (req, res) => {
 
     response.data.values.forEach(value => {
       const data = {
-        from: "Mailgun Sandbox <postmaster@curovate.com>",
+        from: "Nirtal Shah <nirtal@curovate.com>",
         to: value,
-        subject: "Hello",
+        subject: "Curovate has a new blog!",
         template: "new_blog_post",
-        'h:X-Mailgun-Variables': JSON.stringify({blogUrl: newBlogPost[0].url})
+        'h:X-Mailgun-Variables': JSON.stringify({blogUrl: newBlogPost[0].url, blogTitle: newBlogPost[0].title})
       };
     
       mg.messages().send(data, function (error, body) {

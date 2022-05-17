@@ -426,8 +426,8 @@ app.post("/ghost_new_post", newPostLimiter, waitForBlogToPublish, async (req, re
 
 })
 
-app.get('/test', async (req, res) => {
-
+app.get('/test', newPostLimiter, waitForBlogToPublish, async (req, res) => {
+  console.log('middleware is complete')
   res.json({ success: true })
 })
 

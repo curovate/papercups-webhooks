@@ -364,7 +364,7 @@ app.use('/api', newPostLimiter)
 // }
 // app.use('/ghost_new_post', testMiddleware)
 
-const waitForBlogToPublish = () => {
+const waitForBlogToPublish = (req, res, next) => {
   setTimeout(() => {
     next()
   }, 10000)

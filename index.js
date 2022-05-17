@@ -364,10 +364,15 @@ app.use('/api', newPostLimiter)
 // }
 // app.use('/ghost_new_post', testMiddleware)
 
-app.post("/ghost_new_post", newPostLimiter, async (req, res) => {
+const waitForBlogToPublish = () => {
+  setTimeout(() => {
+    next()
+  }, 10000)
+}
+
+app.post("/ghost_new_post", newPostLimiter, waitForBlogToPublish, async (req, res) => {
   console.log('running ghost webhook')
 
-  setTimeout(async () => {
     const api = new GhostContentAPI({
       url: 'https://curovate.com/blog',
       key: 'a0a55dea8c7ed03b59073c0ae4',
@@ -414,8 +419,6 @@ app.post("/ghost_new_post", newPostLimiter, async (req, res) => {
     })
   
   
-    // res.json({ success: true })
-  }, 10000)
 
   res.json({ success: true })
 

@@ -312,9 +312,33 @@ app.post("/fbtokens", async (req, res) => {
       `INSERT INTO firebase_tokens (email, updated_at, token) VALUES ('${email}', current_timestamp, '${token}')`,
       { type: QueryTypes.INSERT }
     )
-    console.log(insertTokenRow)
     res.json({ result: "successfully inserted token to the database" })
   }
+})
+
+app.post("/update_metadata", async (req, res) => {
+  const { email, age, gender, surgery, surgeryType, daysSinceSurgery, injuryDate, daysSinceInjury, isPaid, isFirstDay, subscriberType, planPrice, devicePlatform, country, city, timeSpent, openTimes, complianceAverage, flexionAverage, extensionAverage, daysOfExercise, sessionsOfExercise, stagesCompleted, DOB} = req.body
+
+  const isConversationExists = await sequelize.query(
+    `SELECT * FROM customers WHERE email = '${email}'`, { type: QueryTypes.SELECT }
+  ).catch(err => console.error(err))
+
+  if (isConversationExists.length === 1) {
+    try {
+      await sequelize.query(
+        `UPDATE customers SET metadata = 
+          '{"age": "${age}", "gender": "${gender}", "surgery": "${surgery}", "surgeryType": "${surgeryType}", "daysSinceSurgery": "${daysSinceSurgery}", "injuryDate": "${injuryDate}", "daysSinceInjury": "${daysSinceInjury}", "isPaid": "${isPaid}", "isFirstDay": "${isFirstDay}", "subscriberType": "${subscriberType}", "planPrice": "${planPrice}", "devicePlatform": "${devicePlatform}", "country": "${country}", "city": "${city}", "timeSpent": "${timeSpent}", "openTimes": "${openTimes}", "complianceAverage": "${complianceAverage}", "flexionAverage": "${flexionAverage}", "extensionAverage": "${extensionAverage}", "daysOfExercise": "${daysOfExercise}", "sessionsOfExercise": "${sessionsOfExercise}", "stagesCompleted": "${stagesCompleted}", "DOB": "${DOB}"}' 
+          WHERE email = '${email}'`, { type: QueryTypes.UPDATE }  
+      )
+    } catch (error) {
+      res.json({ error: `Error updating metadata in Papercups profile: ${error}` })
+    }
+  } else {
+    res.json({ result: "Did not update metadata. No such user exists"})
+  }
+
+  res.json({ result: "successfully updated metadata in Papercups profile"})
+
 })
 
 

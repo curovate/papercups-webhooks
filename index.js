@@ -330,14 +330,13 @@ app.post("/update_metadata", async (req, res) => {
           '{"age": "${age}", "gender": "${gender}", "surgery": "${surgery}", "surgeryType": "${surgeryType}", "daysSinceSurgery": "${daysSinceSurgery}", "injuryDate": "${injuryDate}", "daysSinceInjury": "${daysSinceInjury}", "isPaid": "${isPaid}", "isFirstDay": "${isFirstDay}", "subscriberType": "${subscriberType}", "planPrice": "${planPrice}", "devicePlatform": "${devicePlatform}", "country": "${country}", "city": "${city}", "timeSpent": "${timeSpent}", "openTimes": "${openTimes}", "complianceAverage": "${complianceAverage}", "flexionAverage": "${flexionAverage}", "extensionAverage": "${extensionAverage}", "daysOfExercise": "${daysOfExercise}", "sessionsOfExercise": "${sessionsOfExercise}", "stagesCompleted": "${stagesCompleted}", "DOB": "${DOB}"}' 
           WHERE email = '${email}'`, { type: QueryTypes.UPDATE }  
       )
+      res.json({ result: "successfully updated metadata in Papercups profile"})
     } catch (error) {
       res.json({ error: `Error updating metadata in Papercups profile: ${error}` })
     }
   } else {
     res.json({ result: "Did not update metadata. No such user exists"})
   }
-
-  res.json({ result: "successfully updated metadata in Papercups profile"})
 
 })
 
@@ -450,11 +449,6 @@ app.post("/ghost_new_post", newPostLimiter,  async (req, res) => {
     })
   }, 10000)
 
-})
-
-app.post('/test', newPostLimiter, async (req, res) => {
-  res.json({ success: true })
-  console.log('middleware is complete')
 })
 
 app.post('/subscribe', newPostLimiter, async (req, res) => {

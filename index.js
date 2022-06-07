@@ -461,6 +461,7 @@ app.post('/subscribe', newPostLimiter, async (req, res) => {
 
   const range = `Sheet1!A1`
   const link = process.env.GOOGLE_SHEETS_ID
+  
 
   const response = await sheets.spreadsheets.values.append({
     spreadsheetId: link,
@@ -495,5 +496,25 @@ app.post('/subscribe', newPostLimiter, async (req, res) => {
   });
 
   res.json({ success: true })
+})
+
+app.get('/webinars', async (req, res) => {
+  try {
+    const auth = await google.auth.getClient( { scopes: ['https://www.googleapis.com/auth/spreadsheets']});
+    const sheets = google.sheets({ version: 'v4', auth })
+
+
+    const link = process.env.GOOGLE_SHEETS_WEBINARS_ID
+    const range = `Sheet1!A:H`
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: link,
+      range
+    })
+
+    res.json({ webinars: response.data.values })
+  } catch (error) {
+    console.error(error)
+  }
 })
 

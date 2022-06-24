@@ -28,6 +28,8 @@ const mg = mailgun({apiKey: process.env.MAILGUN_API_KEY, domain: DOMAIN});
 const rateLimit = require('express-rate-limit')
 const GhostContentAPI = require('@tryghost/content-api');
 const cors = require('cors')
+const moment = require('moment')
+const { v4: uuidv4 } = require('uuid');
 // --- SETUP ---
 
 // initialize the DB
@@ -40,6 +42,7 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
       rejectUnauthorized: false,
     },
   },
+  omitNull: true
 })
 
 // connect to the DB
@@ -268,13 +271,53 @@ app.post("/markmsgsasread/:email", (req, res) => {
 
 // route to get the number of unread messages
 // this runs when the user opens the app or puts the app in the background state
+
 app.get("/getunreadmsgs/:email", async (req, res) => {
   const email = req.params.email
   const unreadMsgs = await sequelize.query(
     `SELECT unread_msgs FROM customers WHERE email = '${email}'`,
     { type: QueryTypes.SELECT }
   )
+
   res.json({ unreadMsgs })
+})
+
+// NOTE: when creating a customer row for a non-existent customer, it adds Nirtal's Papercups account_id for the Heroku-deployed version.
+//  If creating a new version of the portal then the account_id needs to be changed
+app.post("/create_conversation", async (req, res) => {
+  const { name, email, account_id } = req.body
+  const customer = await sequelize.query(
+    `SELECT * FROM customers WHERE name = '${name}'`,
+    { type: QueryTypes.SELECT }
+  )
+    let customerId
+    let conversationId
+    let message
+    try {
+      if (customer.length === 0) {
+        console.log('no such conversation exists')
+        customerId = await sequelize.query(`INSERT INTO customers(
+          id, first_seen, account_id, inserted_at, updated_at, email, name, external_id) 
+          VALUES (
+            '${uuidv4()}', '${moment().format("YYYY-MM-DD")}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', '${moment().format("YYYY-MM-DD hh:mm:ss")}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', '${email}', '${name}', '${account_id}') RETURNING id;
+            `)
+        conversationId = await sequelize.query(`INSERT INTO conversations(
+          id, inserted_at, updated_at, assignee_id, account_id, customer_id, source, inbox_id) 
+          VALUES ('${uuidv4()}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', 1, '4833cee6-6440-4524-a0f2-cf6ad20f9737', '${customerId[0][0].id}', 'chat', '30b841e1-1a39-49a4-a81b-41e964be699c') RETURNING id;
+          `)
+        message = await sequelize.query(`INSERT INTO messages(
+          id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
+          VALUES (
+            '${uuidv4()}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', 'Hi ${name.split('---')[0]}, do you have any questions about your recovery?', '${conversationId[0][0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+      } else {
+        console.log(`the customer ${name} exists`)
+      }
+    } catch (error) {
+      console.error(error)
+    }
+
+
+  res.json({ customer, customerId, conversationId, message })
 })
 
 // route to get the user's Firebase token. This runs when the user reopens the app

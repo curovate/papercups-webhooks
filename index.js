@@ -285,7 +285,7 @@ app.get("/getunreadmsgs/:email", async (req, res) => {
 // NOTE: when creating a customer row for a non-existent customer, it adds Nirtal's Papercups account_id for the Heroku-deployed version.
 //  If creating a new version of the portal then the account_id needs to be changed
 app.post("/create_conversation", async (req, res) => {
-  const { name, email, account_id } = req.body
+  const { name, email, account_id, surgery } = req.body
   const customer = await sequelize.query(
     `SELECT * FROM customers WHERE name = '${name}'`,
     { type: QueryTypes.SELECT }
@@ -308,14 +308,13 @@ app.post("/create_conversation", async (req, res) => {
         message = await sequelize.query(`INSERT INTO messages(
           id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
           VALUES (
-            '${uuidv4()}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', 'Hi ${name.split('---')[0]}, do you have any questions about your recovery?', '${conversationId[0][0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+            '${uuidv4()}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', 'Hi ${name.split('---')[0]}, do you have any questions about your ${surgery ? surgery : ''} recovery?', '${conversationId[0][0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
       } else {
         console.log(`the customer ${name} exists`)
       }
     } catch (error) {
       console.error(error)
     }
-
 
   res.json({ customer, customerId, conversationId, message })
 })

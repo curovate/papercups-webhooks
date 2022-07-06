@@ -349,6 +349,10 @@ app.post("/automated_message", async (req, res) => {
           id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
           VALUES (
             '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${name}, great job completing your first measurement. It looks like ${submessage}. Send me a message if you have any questions about your knee measurements.', '${conversationId[0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+        await sequelize.query(
+          `UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customerId[0].id}'`,
+          { type: QueryTypes.UPDATE }
+        )
         res.json({ message })
       } else if (type === 'first_hip_measurement') {
         
@@ -364,13 +368,22 @@ app.post("/automated_message", async (req, res) => {
           id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
           VALUES (
             '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${name}, great job completing your first measurement. It looks like ${submessage}. Send me a message if you have any questions about your hip measurements.', '${conversationId[0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+        await sequelize.query(
+          `UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customerId[0].id}'`,
+          { type: QueryTypes.UPDATE }
+        )
         res.json({ message })
       } else if (type === 'first_day_of_exercise') {
         message = await sequelize.query(`INSERT INTO messages(
           id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
           VALUES (
             '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${name}, you just finished your first exercise session using Curovate. Send me a message if you have any questions about your exercises or just to let me know how the first session went.', '${conversationId[0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+        await sequelize.query(
+          `UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customerId[0].id}'`,
+          { type: QueryTypes.UPDATE }
+        )
         res.json({ message })
+
       } else {
         res.json({ error: 'no message type specified' })
       }

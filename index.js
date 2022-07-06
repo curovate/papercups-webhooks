@@ -295,7 +295,6 @@ app.post("/create_conversation", async (req, res) => {
     let message
     try {
       if (customer.length === 0) {
-        console.log('no such conversation exists')
         customerId = await sequelize.query(`INSERT INTO customers(
           id, first_seen, account_id, inserted_at, updated_at, email, name, external_id) 
           VALUES (
@@ -317,6 +316,72 @@ app.post("/create_conversation", async (req, res) => {
     }
 
   res.json({ customer, customerId, conversationId, message })
+})
+
+app.post("/automated_message", async (req, res) => {
+  console.log(req.body)
+  const { name, email, extension, flexion, type } = req.body
+  try {
+    const customer = await sequelize.query(
+      `SELECT * FROM customers WHERE name = '${name}'`,
+      { type: QueryTypes.SELECT }
+    ) 
+    
+    let message
+    if (customer.length === 0) {
+      const customerId = await sequelize.query(`SELECT * FROM customers WHERE email = '${email}' FETCH FIRST ROW ONLY`,  { type: QueryTypes.SELECT })
+      const conversationId = await sequelize.query(`SELECT * FROM conversations WHERE customer_id = '${customerId[0].id}' FETCH FIRST ROW ONLY`,  { type: QueryTypes.SELECT })
+      
+      await sequelize.query(`UPDATE conversations SET updated_at = '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', last_activity_at = '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}' WHERE id = '${conversationId[0].id}'`)
+      
+      if (type === 'first_knee_measurement') {
+        
+        let submessage
+        if (flexion === false) {
+          submessage = `your knee extension is ${extension}`
+        } else if (extension === false) {
+          submessage = `your knee flexion is ${flexion}`
+        } else {
+          submessage = `your knee flexion is ${flexion} and your knee extension is ${extension}`
+        }
+
+        message = await sequelize.query(`INSERT INTO messages(
+          id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
+          VALUES (
+            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${name}, great job completing your first measurement. It looks like ${submessage}. Send me a message if you have any questions about your knee measurements.', '${conversationId[0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+        res.json({ message })
+      } else if (type === 'first_hip_measurement') {
+        
+        let submessage
+        if (flexion === false) {
+          submessage = `your hip extension is ${extension}`
+        } else if (extension === false) {
+          submessage = `your hip flexion is ${flexion}`
+          submessage = `your hip flexion is ${flexion} and your hip extension is ${extension}`
+        }
+        
+        message = await sequelize.query(`INSERT INTO messages(
+          id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
+          VALUES (
+            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${name}, great job completing your first measurement. It looks like ${submessage}. Send me a message if you have any questions about your hip measurements.', '${conversationId[0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+        res.json({ message })
+      } else if (type === 'first_day_of_exercise') {
+        message = await sequelize.query(`INSERT INTO messages(
+          id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
+          VALUES (
+            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${name}, you just finished your first exercise session using Curovate. Send me a message if you have any questions about your exercises or just to let me know how the first session went.', '${conversationId[0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+        res.json({ message })
+      } else {
+        res.json({ error: 'no message type specified' })
+      }
+    } else {
+      res.json({error: 'no such customer exists'})
+    }
+
+  } catch (error) {
+    console.error(error)
+    res.json({ error })
+  }
 })
 
 // route to get the user's Firebase token. This runs when the user reopens the app

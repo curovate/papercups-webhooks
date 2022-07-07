@@ -286,6 +286,8 @@ app.get("/getunreadmsgs/:email", async (req, res) => {
 //  If creating a new version of the portal then the account_id needs to be changed
 app.post("/create_conversation", async (req, res) => {
   const { name, email, account_id, surgery } = req.body
+  const messageName = name.split('---')[0].includes("@") ? name.split('---')[0].split("@")[0] : name.split('---')[0].split(" ")[0]
+
   const customer = await sequelize.query(
     `SELECT * FROM customers WHERE name = '${name}'`,
     { type: QueryTypes.SELECT }
@@ -307,7 +309,7 @@ app.post("/create_conversation", async (req, res) => {
         message = await sequelize.query(`INSERT INTO messages(
           id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
           VALUES (
-            '${uuidv4()}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', 'Hi ${name.split('---')[0]}, do you have any questions about your ${surgery ? surgery : ''} recovery?', '${conversationId[0][0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+            '${uuidv4()}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', 'Hi ${messageName}, do you have any questions about your ${surgery ? surgery : ''} recovery?', '${conversationId[0][0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
       } else {
         console.log(`the customer ${name} exists`)
       }
@@ -332,6 +334,8 @@ app.post("/automated_message", async (req, res) => {
       const customerId = await sequelize.query(`SELECT * FROM customers WHERE email = '${email}' FETCH FIRST ROW ONLY`,  { type: QueryTypes.SELECT })
       const conversationId = await sequelize.query(`SELECT * FROM conversations WHERE customer_id = '${customerId[0].id}' FETCH FIRST ROW ONLY`,  { type: QueryTypes.SELECT })
       
+      const messageName = name.includes("@") ? name.split("@")[0] : name.split(" ")[0]
+
       await sequelize.query(`UPDATE conversations SET updated_at = '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', last_activity_at = '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}' WHERE id = '${conversationId[0].id}'`)
       
       if (type === 'first_knee_measurement') {
@@ -348,7 +352,10 @@ app.post("/automated_message", async (req, res) => {
         message = await sequelize.query(`INSERT INTO messages(
           id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
           VALUES (
-            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${name}, great job completing your first measurement. It looks like ${submessage}. Send me a message if you have any questions about your knee measurements.', '${conversationId[0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${messageName}, great job completing your first measurement. It looks like ${submessage}. Send me a message if you have any questions about your knee measurements.', '${conversationId[0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+        
+        await sequelize.query(`UPDATE conversations SET updated_at = '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}' WHERE customer_id = '${customerId[0].id}'`)
+
         await sequelize.query(
           `UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customerId[0].id}'`,
           { type: QueryTypes.UPDATE }
@@ -367,21 +374,25 @@ app.post("/automated_message", async (req, res) => {
         message = await sequelize.query(`INSERT INTO messages(
           id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
           VALUES (
-            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${name}, great job completing your first measurement. It looks like ${submessage}. Send me a message if you have any questions about your hip measurements.', '${conversationId[0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${messageName}, great job completing your first measurement. It looks like ${submessage}. Send me a message if you have any questions about your hip measurements.', '${conversationId[0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
         await sequelize.query(
           `UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customerId[0].id}'`,
           { type: QueryTypes.UPDATE }
         )
+        await sequelize.query(`UPDATE conversations SET updated_at = '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}' WHERE customer_id = '${customerId[0].id}'`)
+
         res.json({ message })
       } else if (type === 'first_day_of_exercise') {
         message = await sequelize.query(`INSERT INTO messages(
           id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
           VALUES (
-            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${name}, you just finished your first exercise session using Curovate. Send me a message if you have any questions about your exercises or just to let me know how the first session went.', '${conversationId[0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${messageName}, you just finished your first exercise session using Curovate. Send me a message if you have any questions about your exercises or just to let me know how the first session went.', '${conversationId[0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
         await sequelize.query(
           `UPDATE customers SET unread_msgs = unread_msgs + 1 WHERE id = '${customerId[0].id}'`,
           { type: QueryTypes.UPDATE }
         )
+        await sequelize.query(`UPDATE conversations SET updated_at = '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}' WHERE customer_id = '${customerId[0].id}'`)
+
         res.json({ message })
 
       } else {
@@ -390,7 +401,6 @@ app.post("/automated_message", async (req, res) => {
     } else {
       res.json({error: 'no such customer exists'})
     }
-
   } catch (error) {
     console.error(error)
     res.json({ error })

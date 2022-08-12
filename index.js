@@ -368,8 +368,10 @@ app.post("/automated_message", async (req, res) => {
           submessage = `your hip extension is ${extension}`
         } else if (extension === false) {
           submessage = `your hip flexion is ${flexion}`
+        } else {
           submessage = `your hip flexion is ${flexion} and your hip extension is ${extension}`
         }
+
         
         message = await sequelize.query(`INSERT INTO messages(
           id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 

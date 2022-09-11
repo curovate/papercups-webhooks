@@ -300,16 +300,16 @@ app.post("/create_conversation", async (req, res) => {
         customerId = await sequelize.query(`INSERT INTO customers(
           id, first_seen, account_id, inserted_at, updated_at, email, name, external_id) 
           VALUES (
-            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD")}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', '${moment().utc().format("YYYY-MM-DD hh:mm:ss")}', '${moment().format("YYYY-MM-DD hh:mm:ss")}', '${email}', '${name}', '${account_id}') RETURNING id;
+            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD")}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${email}', '${name}', '${account_id}') RETURNING id;
             `)
         conversationId = await sequelize.query(`INSERT INTO conversations(
-          id, inserted_at, updated_at, assignee_id, account_id, customer_id, source, inbox_id) 
-          VALUES ('${uuidv4()}', '${moment().utc().format("YYYY-MM-DD hh:mm:ss")}', '${moment().utc().format("YYYY-MM-DD hh:mm:ss")}', 1, '4833cee6-6440-4524-a0f2-cf6ad20f9737', '${customerId[0][0].id}', 'chat', '30b841e1-1a39-49a4-a81b-41e964be699c') RETURNING id;
+          id, inserted_at, updated_at, assignee_id, account_id, customer_id, source, inbox_id, read) 
+          VALUES ('${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 1, '4833cee6-6440-4524-a0f2-cf6ad20f9737', '${customerId[0][0].id}', 'chat', '30b841e1-1a39-49a4-a81b-41e964be699c', 'true') RETURNING id;
           `)
         message = await sequelize.query(`INSERT INTO messages(
           id, inserted_at, updated_at, body, conversation_id, account_id, user_id, source) 
           VALUES (
-            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD hh:mm:ss")}', '${moment().utc().format("YYYY-MM-DD hh:mm:ss")}', 'Hi ${messageName}, do you have any questions about your ${surgery ? surgery : ''} recovery?', '${conversationId[0][0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
+            '${uuidv4()}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', '${moment().utc().format("YYYY-MM-DD HH:mm:ss")}', 'Hi ${messageName}, do you have any questions about your ${surgery ? surgery : ''} recovery?', '${conversationId[0][0].id}', '4833cee6-6440-4524-a0f2-cf6ad20f9737', 1, 'chat')`)
       } else {
         console.log(`the customer ${name} exists`)
       }

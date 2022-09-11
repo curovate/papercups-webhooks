@@ -19,7 +19,6 @@ class Papercups {
       throw new Error('Invalid token!');
     }
 
-    console.log('Attempting to send message:', params);
     return request
       .post(`${BASE_URL}/api/v1/messages`)
       .set('Authorization', `Bearer ${token}`)
